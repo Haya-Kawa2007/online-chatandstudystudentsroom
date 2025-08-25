@@ -8,20 +8,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .hidden { display: none; }
-        .notification { 
-            position: fixed; 
-            top: 20px; 
-            right: 20px; 
-            z-index: 1000; 
-            padding: 15px; 
-            border-radius: 8px; 
-            background: #10b981; 
-            color: white; 
-            opacity: 0; 
-            transition: opacity 0.3s;
+        body { 
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: white;
+            transition: background 0.3s ease;
         }
-        .notification.show { opacity: 1; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         .achievement-badge {
             width: 60px;
             height: 60px;
@@ -30,679 +23,1203 @@
             align-items: center;
             justify-content: center;
             margin: 5px;
-            font-size: 24px;
             position: relative;
+            cursor: pointer;
         }
-        .user-frame-blue { border: 3px solid #3b82f6; }
-        .user-frame-green { border: 3px solid #10b981; }
-        .user-frame-red { border: 3px solid #ef4444; }
-        .user-frame-silver { border: 3px solid #94a3b8; }
-        .user-frame-gold { border: 3px solid #f59e0b; }
-        .user-frame-diamond { border: 3px solid linear-gradient(45deg, #e0e7ff, #c7d2fe, #a5b4fc); }
+        .user-frame {
+            border: 3px solid;
+            border-radius: 50%;
+        }
+        .frame-blue { border-color: #3b82f6; }
+        .frame-green { border-color: #10b981; }
+        .frame-red { border-color: #ef4444; }
+        .frame-silver { border-color: #6b7280; }
+        .frame-gold { border-color: #f59e0b; }
+        .frame-diamond { 
+            border: 3px solid;
+            background: linear-gradient(45deg, #a855f7, #3b82f6, #10b981, #f59e0b);
+            background-size: 400% 400%;
+            animation: rainbow 3s ease infinite;
+        }
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .notification-dot {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: #ef4444;
+            border-radius: 50%;
+            color: white;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
         .timer-display {
             font-size: 3rem;
             font-weight: bold;
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
         }
-        .chat-message {
-            margin-bottom: 10px;
-            padding: 8px;
-            border-radius: 8px;
-            background: #f3f4f6;
-        }
-        .flashcard {
+        .word-card {
             perspective: 1000px;
-            width: 300px;
             height: 200px;
-            margin: 10px auto;
         }
-        .flashcard-inner {
+        .word-card-inner {
             position: relative;
             width: 100%;
             height: 100%;
             text-align: center;
-            transition: transform 0.8s;
+            transition: transform 0.6s;
             transform-style: preserve-3d;
-            cursor: pointer;
         }
-        .flashcard.flipped .flashcard-inner {
+        .word-card.flipped .word-card-inner {
             transform: rotateY(180deg);
         }
-        .flashcard-front, .flashcard-back {
+        .word-card-front, .word-card-back {
             position: absolute;
             width: 100%;
             height: 100%;
             backface-visibility: hidden;
-            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            font-size: 1.5rem;
             font-weight: bold;
         }
-        .flashcard-front {
-            background: #3b82f6;
-            color: white;
-        }
-        .flashcard-back {
-            background: #10b981;
-            color: white;
+        .word-card-back {
             transform: rotateY(180deg);
+            background: #f3f4f6;
         }
     </style>
 </head>
-<body class="bg-white min-h-screen">
-    <div id="notification" class="notification"></div>
-
-    <!-- パスワード入力画面 -->
-    <div id="passwordScreen" class="min-h-screen flex items-center justify-center bg-gray-50">
-        <div class="bg-white p-8 rounded-lg shadow-md w-96">
-            <h1 class="text-2xl font-bold text-center mb-6">StudyHome</h1>
-            <p class="text-gray-600 text-center mb-4">アクセスパスワードを入力してください</p>
-            <input type="password" id="accessPassword" placeholder="パスワード" class="w-full p-3 border rounded-lg mb-4">
-            <button onclick="checkPassword()" class="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600">
+<body class="min-h-screen bg-white">
+    <!-- Access Password Screen -->
+    <div id="accessScreen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+            <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">StudyHome</h1>
+            <p class="text-gray-600 text-center mb-6">オンライン学習コミュニティへようこそ</p>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">アクセスパスワード</label>
+                <input type="password" id="accessPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="パスワードを入力してください">
+            </div>
+            <button onclick="checkAccess()" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors">
                 アクセス
             </button>
+            <div id="accessError" class="text-red-500 text-sm mt-2 hidden">パスワードが正しくありません</div>
         </div>
     </div>
 
-    <!-- ログイン画面 -->
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-50 hidden">
-        <div class="bg-white p-8 rounded-lg shadow-md w-96">
-            <h2 class="text-2xl font-bold text-center mb-6">ログイン</h2>
-            <input type="text" id="loginName" placeholder="ユーザー名" class="w-full p-3 border rounded-lg mb-4">
-            <input type="text" id="loginId" placeholder="ユーザーID" class="w-full p-3 border rounded-lg mb-4">
-            <button onclick="login()" class="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 mb-4">
-                ログイン
-            </button>
-            <hr class="mb-4">
-            <h3 class="text-lg font-semibold text-center mb-4">新規登録</h3>
-            <input type="text" id="registerName" placeholder="ユーザー名" class="w-full p-3 border rounded-lg mb-4">
-            <input type="text" id="registerId" placeholder="ユーザーID" class="w-full p-3 border rounded-lg mb-4">
-            <button onclick="register()" class="w-full bg-green-500 text-white p-3 rounded-lg hover:bg-green-600">
-                アカウント作成
-            </button>
+    <!-- Login/Register Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 hidden">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+            <h2 class="text-2xl font-bold text-center mb-6">ログイン / 新規登録</h2>
+            
+            <!-- Login Form -->
+            <div id="loginForm">
+                <h3 class="text-lg font-semibold mb-4">ログイン</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">名前</label>
+                    <input type="text" id="loginName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">ユーザーID</label>
+                    <input type="text" id="loginId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button onclick="login()" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors mb-4">
+                    ログイン
+                </button>
+            </div>
+            
+            <!-- Register Form -->
+            <div id="registerForm" class="hidden">
+                <h3 class="text-lg font-semibold mb-4">新規登録</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">名前</label>
+                    <input type="text" id="registerName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">ユーザーID</label>
+                    <input type="text" id="registerId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button onclick="register()" class="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition-colors mb-4">
+                    新規登録
+                </button>
+            </div>
+            
+            <div class="text-center">
+                <button onclick="toggleForm()" id="toggleButton" class="text-blue-600 hover:text-blue-800 underline">
+                    新規登録はこちら
+                </button>
+            </div>
+            <div id="loginError" class="text-red-500 text-sm mt-2 hidden"></div>
         </div>
     </div>
 
-    <!-- メインアプリケーション -->
-    <div id="mainApp" class="hidden">
-        <!-- ヘッダー -->
-        <header class="bg-white shadow-sm p-4">
-            <div class="flex justify-between items-center">
-                <h1 class="text-xl font-bold">StudyHome</h1>
-                <div class="flex items-center space-x-4">
-                    <span id="userInfo" class="text-gray-600"></span>
-                    <button onclick="logout()" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
+    <!-- Main App -->
+    <div id="mainApp" class="hidden min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">StudyHome</h1>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-star text-yellow-500"></i>
+                    <span id="userPoints">0</span>
+                    <span class="text-sm text-gray-500">ポイント</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-trophy text-blue-500"></i>
+                    <span id="userExp">0</span>
+                    <span class="text-sm text-gray-500">EXP</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">Lv.</span>
+                    <span id="userLevel">1</span>
+                </div>
+                <div id="userProfileHeader" class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-full bg-gray-300 user-frame frame-blue flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span id="headerUserName">ユーザー</span>
                 </div>
             </div>
         </header>
 
-        <!-- メインコンテンツ -->
-        <main class="pb-20">
-            <!-- 投稿・質問画面 -->
-            <div id="postsScreen" class="p-4">
-                <div class="mb-6">
-                    <h2 class="text-xl font-bold mb-4">投稿・質問</h2>
-                    <div class="bg-white rounded-lg shadow p-4 mb-4">
-                        <textarea id="postContent" placeholder="質問や投稿内容を入力してください..." class="w-full p-3 border rounded-lg mb-4 h-24"></textarea>
-                        <div class="flex items-center space-x-4">
-                            <input type="file" id="postFile" accept=".pdf,.jpg,.jpeg,.png" class="mb-4">
-                            <button onclick="submitPost()" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
-                                投稿
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div id="postsList" class="space-y-4">
-                    <!-- 投稿がここに表示される -->
-                </div>
-            </div>
-
-            <!-- タイマー画面 -->
-            <div id="timerScreen" class="p-4 hidden">
-                <h2 class="text-xl font-bold mb-4">学習タイマー</h2>
-                
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <div class="text-center mb-6">
-                        <div id="timerDisplay" class="timer-display text-4xl font-mono mb-4">25:00</div>
-                        <div class="space-x-4">
-                            <button id="startTimer" onclick="startTimer()" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600">
-                                <i class="fas fa-play"></i> 開始
-                            </button>
-                            <button id="pauseTimer" onclick="pauseTimer()" class="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 hidden">
-                                <i class="fas fa-pause"></i> 停止
-                            </button>
-                            <button onclick="resetTimer()" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600">
-                                <i class="fas fa-stop"></i> リセット
-                            </button>
+        <!-- Main Content -->
+        <main class="flex-1 pb-20">
+            <!-- Posts Tab -->
+            <div id="postsTab" class="tab-content active p-4">
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-6">
+                        <div class="bg-white rounded-lg shadow p-4 mb-4">
+                            <h3 class="font-semibold mb-3">新しい投稿・質問</h3>
+                            <textarea id="postContent" class="w-full p-3 border border-gray-300 rounded-md resize-none" rows="3" placeholder="質問や解説を投稿してください..."></textarea>
+                            <div class="flex justify-between items-center mt-3">
+                                <div class="flex space-x-2">
+                                    <input type="file" id="postFile" accept="image/*,.pdf" class="hidden">
+                                    <button onclick="document.getElementById('postFile').click()" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                                        <i class="fas fa-paperclip mr-1"></i>ファイル
+                                    </button>
+                                    <select id="postSubject" class="px-3 py-1 border border-gray-300 rounded">
+                                        <option value="general">一般</option>
+                                        <option value="math">数学</option>
+                                        <option value="english">英語</option>
+                                        <option value="science">理科</option>
+                                        <option value="social">社会</option>
+                                        <option value="japanese">国語</option>
+                                    </select>
+                                </div>
+                                <button onclick="createPost()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                    投稿
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-2">ポモドーロタイマー</label>
-                            <select id="pomodoroTime" onchange="setPomodoroTimer()" class="w-full p-2 border rounded">
-                                <option value="25">25分</option>
-                                <option value="50">50分</option>
-                                <option value="90">90分</option>
+                    <div id="postsList" class="space-y-4">
+                        <!-- Posts will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timer Tab -->
+            <div id="timerTab" class="tab-content p-4">
+                <div class="max-w-2xl mx-auto">
+                    <div class="bg-white rounded-lg shadow p-6 text-center mb-6">
+                        <h3 class="text-xl font-semibold mb-6">勉強タイマー</h3>
+                        
+                        <div class="mb-6">
+                            <div class="timer-display text-6xl mb-4" id="timerDisplay">25:00</div>
+                            <div class="flex justify-center space-x-4 mb-4">
+                                <button onclick="startTimer()" id="startBtn" class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                                    <i class="fas fa-play mr-2"></i>開始
+                                </button>
+                                <button onclick="pauseTimer()" id="pauseBtn" class="px-6 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">
+                                    <i class="fas fa-pause mr-2"></i>一時停止
+                                </button>
+                                <button onclick="resetTimer()" id="resetBtn" class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                                    <i class="fas fa-stop mr-2"></i>リセット
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">勉強時間（分）</label>
+                                <input type="number" id="studyTime" value="25" min="1" max="120" class="w-full px-3 py-2 border border-gray-300 rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">休憩時間（分）</label>
+                                <input type="number" id="breakTime" value="5" min="1" max="30" class="w-full px-3 py-2 border border-gray-300 rounded">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">科目</label>
+                            <select id="timerSubject" class="w-full px-3 py-2 border border-gray-300 rounded">
+                                <option value="math">数学</option>
+                                <option value="english">英語</option>
+                                <option value="science">理科</option>
+                                <option value="social">社会</option>
+                                <option value="japanese">国語</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">カスタムタイマー（分）</label>
-                            <input type="number" id="customTime" placeholder="分数を入力" class="w-full p-2 border rounded">
-                            <button onclick="setCustomTimer()" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                                設定
-                            </button>
-                        </div>
                     </div>
-                    
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2">科目</label>
-                        <select id="studySubject" class="w-full p-2 border rounded">
-                            <option value="数学">数学</option>
-                            <option value="英語">英語</option>
-                            <option value="国語">国語</option>
-                            <option value="理科">理科</option>
-                            <option value="社会">社会</option>
-                            <option value="その他">その他</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2">手動で学習時間を記録</label>
-                        <div class="flex space-x-2">
-                            <input type="number" id="manualHours" placeholder="時間" class="p-2 border rounded w-20">
-                            <input type="number" id="manualMinutes" placeholder="分" class="p-2 border rounded w-20">
-                            <button onclick="recordManualTime()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                                記録
-                            </button>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- 学習統計 -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold mb-4">学習統計</h3>
-                    <div class="mb-4">
-                        <select id="chartPeriod" onchange="updateStudyChart()" class="p-2 border rounded">
-                            <option value="week">週間</option>
-                            <option value="month">月間</option>
-                        </select>
-                    </div>
-                    <canvas id="studyChart" style="height: 300px;"></canvas>
-                </div>
-            </div>
-
-            <!-- チャット画面 -->
-            <div id="chatScreen" class="p-4 hidden">
-                <div class="flex h-96">
-                    <div class="w-1/3 border-r pr-4">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-xl font-bold">チャット</h2>
-                            <button onclick="showCreateGroup()" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
-                                グループ作成
-                            </button>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold mb-4">手動で勉強時間を記録</h3>
+                        <div class="grid grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">科目</label>
+                                <select id="manualSubject" class="w-full px-3 py-2 border border-gray-300 rounded">
+                                    <option value="math">数学</option>
+                                    <option value="english">英語</option>
+                                    <option value="science">理科</option>
+                                    <option value="social">社会</option>
+                                    <option value="japanese">国語</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">時間（分）</label>
+                                <input type="number" id="manualTime" min="1" max="600" class="w-full px-3 py-2 border border-gray-300 rounded">
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="addManualStudyTime()" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                    記録
+                                </button>
+                            </div>
                         </div>
-                        
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6 mt-6">
+                        <h3 class="text-lg font-semibold mb-4">勉強時間統計</h3>
                         <div class="mb-4">
-                            <h3 class="font-semibold mb-2">個人チャット</h3>
-                            <div id="usersList" class="space-y-2 max-h-32 overflow-y-auto">
-                                <!-- ユーザー一覧がここに表示される -->
+                            <select id="chartPeriod" onchange="updateStudyChart()" class="px-3 py-2 border border-gray-300 rounded">
+                                <option value="week">週間</option>
+                                <option value="month">月間</option>
+                            </select>
+                        </div>
+                        <canvas id="studyChart" style="height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Tab -->
+            <div id="chatTab" class="tab-content p-4">
+                <div class="max-w-4xl mx-auto">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 h-96">
+                        <!-- Chat List -->
+                        <div class="md:col-span-1 bg-white rounded-lg shadow p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-semibold">チャット</h3>
+                                <button onclick="showGroupCreate()" class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div id="chatList" class="space-y-2">
+                                <!-- Chat rooms will be listed here -->
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h4 class="font-medium mb-2">個人チャット</h4>
+                                <select id="privateChatSelect" onchange="openPrivateChat()" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                                    <option value="">相手を選択</option>
+                                </select>
                             </div>
                         </div>
                         
-                        <div>
-                            <h3 class="font-semibold mb-2">グループチャット</h3>
-                            <div id="groupsList" class="space-y-2 max-h-32 overflow-y-auto">
-                                <!-- グループ一覧がここに表示される -->
+                        <!-- Chat Area -->
+                        <div class="md:col-span-3 bg-white rounded-lg shadow flex flex-col">
+                            <div id="chatHeader" class="p-4 border-b bg-gray-50 rounded-t-lg">
+                                <h4 class="font-semibold">チャットを選択してください</h4>
+                            </div>
+                            <div id="chatMessages" class="flex-1 p-4 overflow-y-auto">
+                                <!-- Messages will appear here -->
+                            </div>
+                            <div id="chatInput" class="p-4 border-t hidden">
+                                <div class="flex space-x-2">
+                                    <input type="text" id="messageInput" class="flex-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="メッセージを入力...">
+                                    <button onclick="sendMessage()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                        送信
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="w-2/3 pl-4">
-                        <div id="chatArea" class="h-80 border rounded-lg p-4 overflow-y-auto mb-4">
-                            <p class="text-gray-500 text-center">チャット相手を選択してください</p>
+                </div>
+                
+                <!-- Group Creation Modal -->
+                <div id="groupCreateModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div class="bg-white rounded-lg p-6 w-96">
+                        <h3 class="text-lg font-semibold mb-4">グループチャット作成</h3>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">グループ名</label>
+                            <input type="text" id="groupName" class="w-full px-3 py-2 border border-gray-300 rounded">
                         </div>
-                        <div class="flex">
-                            <input type="text" id="chatInput" placeholder="メッセージを入力..." class="flex-1 p-2 border rounded-l-lg" disabled>
-                            <button onclick="sendMessage()" class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600" disabled id="sendButton">
-                                送信
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">メンバーを選択</label>
+                            <div id="groupMemberSelect" class="max-h-32 overflow-y-auto border border-gray-300 rounded p-2">
+                                <!-- User checkboxes will be added here -->
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button onclick="closeGroupCreate()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                                キャンセル
+                            </button>
+                            <button onclick="createGroup()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                作成
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 単語カード画面 -->
-            <div id="flashcardScreen" class="p-4 hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold">単語カード</h2>
-                    <div class="space-x-2">
-                        <button onclick="showCreateFlashcardSet()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
-                            新しいセット作成
-                        </button>
-                        <button onclick="showAddFlashcard()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600" id="addCardBtn" style="display: none;">
-                            カード追加
-                        </button>
+            <!-- Profile Tab -->
+            <div id="profileTab" class="tab-content p-4">
+                <div class="max-w-2xl mx-auto">
+                    <div class="bg-white rounded-lg shadow p-6 mb-6">
+                        <h3 class="text-xl font-semibold mb-6 text-center">プロフィール</h3>
+                        
+                        <div class="text-center mb-6">
+                            <div class="w-24 h-24 rounded-full bg-gray-300 mx-auto mb-4 user-frame frame-blue flex items-center justify-center cursor-pointer" onclick="changeProfileImage()">
+                                <i class="fas fa-user text-gray-600 text-2xl" id="profileIcon"></i>
+                            </div>
+                            <input type="file" id="profileImageInput" accept="image/*" class="hidden">
+                            <h4 class="text-lg font-semibold" id="profileName">ユーザー名</h4>
+                            <p class="text-gray-600">Level <span id="profileLevel">1</span></p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">名前</label>
+                                <input type="text" id="editName" class="w-full px-3 py-2 border border-gray-300 rounded">
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">ポイント</label>
+                                    <div class="px-3 py-2 bg-gray-100 rounded text-gray-600" id="profilePoints">0</div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">経験値</label>
+                                    <div class="px-3 py-2 bg-gray-100 rounded text-gray-600" id="profileExp">0</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">総勉強時間</label>
+                                <div class="px-3 py-2 bg-gray-100 rounded text-gray-600" id="totalStudyTime">0分</div>
+                            </div>
+
+                            <button onclick="saveProfile()" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                保存
+                            </button>
+                        </div>
                     </div>
-                </div>
-                
-                <div id="flashcardSets" class="mb-6">
-                    <!-- 単語カードセット一覧がここに表示される -->
-                </div>
-                
-                <div id="flashcardDisplay" class="text-center">
-                    <p class="text-gray-500">単語カードセットを選択してください</p>
+
+                    <!-- Achievements -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold mb-4">アチーブメント</h3>
+                        <div id="achievementsList" class="grid grid-cols-4 gap-4">
+                            <!-- Achievement badges will be displayed here -->
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- プロフィール画面 -->
-            <div id="profileScreen" class="p-4 hidden">
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <h2 class="text-xl font-bold mb-4">プロフィール</h2>
-                    <div class="text-center mb-6">
-                        <div class="relative inline-block">
-                            <img id="profileImage" src="https://via.placeholder.com/100" alt="プロフィール画像" class="w-24 h-24 rounded-full mx-auto mb-4 user-frame-blue">
-                            <input type="file" id="profileImageInput" accept="image/*" class="hidden" onchange="updateProfileImage()">
-                            <button onclick="document.getElementById('profileImageInput').click()" class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center">
-                                <i class="fas fa-camera text-xs"></i>
+            <!-- Settings Tab -->
+            <div id="settingsTab" class="tab-content p-4">
+                <div class="max-w-2xl mx-auto space-y-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold mb-4">通知設定</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <label class="text-sm font-medium">30分ごとの通知</label>
+                                <input type="checkbox" id="notificationEnabled" class="rounded">
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <label class="text-sm font-medium">静かモード</label>
+                                <input type="checkbox" id="quietMode" class="rounded">
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <label class="text-sm font-medium">タイマー完了通知</label>
+                                <input type="checkbox" id="timerNotification" class="rounded">
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <label class="text-sm font-medium">チャット通知</label>
+                                <input type="checkbox" id="chatNotification" class="rounded">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold mb-4">背景設定</h3>
+                        <div class="grid grid-cols-4 gap-3 mb-4">
+                            <div onclick="changeBackground('white')" class="w-full h-16 bg-white border-2 border-gray-300 rounded cursor-pointer"></div>
+                            <div onclick="changeBackground('#f3f4f6')" class="w-full h-16 bg-gray-100 border-2 border-gray-300 rounded cursor-pointer"></div>
+                            <div onclick="changeBackground('#dbeafe')" class="w-full h-16 bg-blue-100 border-2 border-gray-300 rounded cursor-pointer"></div>
+                            <div onclick="changeBackground('#dcfce7')" class="w-full h-16 bg-green-100 border-2 border-gray-300 rounded cursor-pointer"></div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">カスタム背景画像</label>
+                            <input type="file" id="backgroundImage" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded">
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold mb-4">ポイントショップ</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center p-3 border rounded">
+                                <div>
+                                    <div class="font-medium">経験値1.1倍ブースト</div>
+                                    <div class="text-sm text-gray-500">次回購入: <span id="expBoostPrice">100</span>ポイント</div>
+                                </div>
+                                <button onclick="buyExpBoost()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                    購入
+                                </button>
+                            </div>
+                            <div class="flex justify-between items-center p-3 border rounded">
+                                <div>
+                                    <div class="font-medium">ポイント&経験値1.2倍ブースト</div>
+                                    <div class="text-sm text-gray-500">次回購入: <span id="doubleBoostPrice">200</span>ポイント</div>
+                                </div>
+                                <button onclick="buyDoubleBoost()" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                                    購入
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold mb-4">管理者・関係者</h3>
+                        <div class="space-y-3">
+                            <button onclick="showAdminLogin()" class="w-full px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">
+                                管理画面へ
+                            </button>
+                            <button onclick="logout()" class="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                                ログアウト
                             </button>
                         </div>
-                        <h3 id="profileName" class="text-lg font-semibold"></h3>
-                        <p class="text-sm text-gray-600">レベル <span id="userLevel">1</span></p>
-                        <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
-                            <div id="expBar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <p class="text-sm text-gray-600">EXP: <span id="userExp">0</span> / <span id="nextLevelExp">100</span></p>
-                        <p class="text-sm text-gray-600">ポイント: <span id="userPoints">0</span></p>
                     </div>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-2">ユーザー名変更</label>
-                            <div class="flex space-x-2">
-                                <input type="text" id="newUsername" placeholder="新しいユーザー名" class="flex-1 p-2 border rounded">
-                                <button onclick="updateUsername()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                                    更新
+                </div>
+            </div>
+
+            <!-- Word Cards Tab -->
+            <div id="wordCardsTab" class="tab-content p-4">
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-6 flex justify-between items-center">
+                        <h3 class="text-xl font-semibold">単語カード</h3>
+                        <button onclick="showCreateCardSet()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            <i class="fas fa-plus mr-2"></i>新しいセット作成
+                        </button>
+                    </div>
+
+                    <!-- Card Sets List -->
+                    <div id="cardSetsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                        <!-- Card sets will be displayed here -->
+                    </div>
+
+                    <!-- Card Study Area -->
+                    <div id="cardStudyArea" class="hidden">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="text-lg font-semibold" id="currentCardSetName">カードセット名</h4>
+                                <button onclick="exitCardStudy()" class="text-gray-600 hover:text-gray-800">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="text-center mb-4">
+                                <span id="cardProgress">1 / 10</span>
+                            </div>
+                            <div class="word-card mx-auto max-w-md cursor-pointer" onclick="flipCard()">
+                                <div class="word-card-inner">
+                                    <div class="word-card-front">
+                                        <div id="cardFront">単語</div>
+                                    </div>
+                                    <div class="word-card-back">
+                                        <div id="cardBack">意味</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-center space-x-4 mt-6">
+                                <button onclick="previousCard()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                                    <i class="fas fa-chevron-left mr-2"></i>前へ
+                                </button>
+                                <button onclick="nextCard()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                    次へ<i class="fas fa-chevron-right ml-2"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- アチーブメント -->
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <h3 class="text-lg font-semibold mb-4">アチーブメント</h3>
-                    <div id="achievementsList" class="grid grid-cols-4 gap-4">
-                        <!-- アチーブメントがここに表示される -->
-                    </div>
-                </div>
-
-                <!-- ショップ -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold mb-4">ショップ</h3>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center p-4 border rounded">
-                            <div>
-                                <p class="font-medium">経験値ブースター (1.1倍)</p>
-                                <p class="text-sm text-gray-600">経験値獲得量が1.1倍になります</p>
+                <!-- Create Card Set Modal -->
+                <div id="createCardSetModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div class="bg-white rounded-lg p-6 w-96 max-h-96 overflow-y-auto">
+                        <h3 class="text-lg font-semibold mb-4">単語カードセット作成</h3>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">セット名</label>
+                            <input type="text" id="cardSetName" class="w-full px-3 py-2 border border-gray-300 rounded" placeholder="例: 英検用1">
+                        </div>
+                        <div class="mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="block text-sm font-medium">カード</label>
+                                <button onclick="addCardInput()" class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-plus"></i>
+                                </button>
                             </div>
-                            <button onclick="buyExpBooster()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                                <span id="expBoosterPrice">100</span>P
+                            <div id="cardInputs" class="space-y-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="text" class="px-2 py-1 border border-gray-300 rounded text-sm" placeholder="単語・問題">
+                                    <input type="text" class="px-2 py-1 border border-gray-300 rounded text-sm" placeholder="意味・答え">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="flex justify-between items-center">
+                                <label class="text-sm font-medium">公開設定</label>
+                                <input type="checkbox" id="cardSetPublic" class="rounded">
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button onclick="closeCreateCardSet()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                                キャンセル
+                            </button>
+                            <button onclick="createCardSet()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                作成
                             </button>
                         </div>
-                        <div class="flex justify-between items-center p-4 border rounded">
-                            <div>
-                                <p class="font-medium">全能ブースター (1.2倍)</p>
-                                <p class="text-sm text-gray-600">ポイントと経験値獲得量が1.2倍になります</p>
-                            </div>
-                            <button onclick="buyAllBooster()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
-                                <span id="allBoosterPrice">200</span>P
-                            </button>
-                        </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- 設定画面 -->
-            <div id="settingsScreen" class="p-4 hidden">
-                <h2 class="text-xl font-bold mb-4">設定</h2>
-                
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <h3 class="text-lg font-semibold mb-4">通知設定</h3>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium">静かモード</label>
-                            <input type="checkbox" id="quietMode" class="toggle">
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium">タイマー通知</label>
-                            <input type="checkbox" id="timerNotification" checked class="toggle">
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium">チャット通知</label>
-                            <input type="checkbox" id="chatNotification" checked class="toggle">
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium">30分ごとの通知</label>
-                            <input type="checkbox" id="reminderNotification" class="toggle">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <h3 class="text-lg font-semibold mb-4">背景設定</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-2">背景色</label>
-                            <input type="color" id="backgroundColor" value="#ffffff" onchange="changeBackgroundColor()" class="w-full h-10">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2">背景画像</label>
-                            <input type="file" id="backgroundImage" accept="image/*" onchange="changeBackgroundImage()" class="w-full">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold mb-4">関係者用</h3>
-                    <div class="space-y-4">
-                        <input type="password" id="adminPassword" placeholder="管理者パスワード" class="w-full p-3 border rounded-lg">
-                        <button onclick="adminLogin()" class="w-full bg-red-500 text-white p-3 rounded-lg hover:bg-red-600">
-                            管理画面にアクセス
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 管理画面 -->
-            <div id="adminScreen" class="p-4 hidden">
-                <h2 class="text-xl font-bold mb-4">管理画面</h2>
-                
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <h3 class="text-lg font-semibold mb-4">ユーザー管理</h3>
-                    <div id="adminUsersList" class="space-y-4">
-                        <!-- ユーザー一覧がここに表示される -->
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <h3 class="text-lg font-semibold mb-4">チャット管理</h3>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <label class="text-sm font-medium">全体チャットを開放</label>
-                            <input type="checkbox" id="globalChatEnabled" onchange="toggleGlobalChat()" class="toggle">
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <h4 class="font-medium mb-2">投稿管理</h4>
-                        <div id="adminPostsList" class="space-y-2 max-h-64 overflow-y-auto">
-                            <!-- 投稿一覧がここに表示される -->
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <h3 class="text-lg font-semibold mb-4">アチーブメント管理</h3>
-                    <button onclick="showCreateAchievement()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mb-4">
-                        新しいアチーブメント作成
-                    </button>
-                    <div id="adminAchievementsList" class="space-y-4">
-                        <!-- アチーブメント一覧がここに表示される -->
-                    </div>
-                </div>
-                
-                <div class="text-center">
-                    <button onclick="showSuperAdmin()" class="bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900">
-                        超管理者モード
-                    </button>
                 </div>
             </div>
         </main>
 
-        <!-- 下部ナビゲーション -->
-        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t">
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t">
             <div class="flex justify-around py-2">
-                <button onclick="showScreen('posts')" class="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600">
-                    <i class="fas fa-edit text-xl mb-1"></i>
-                    <span class="text-xs">投稿・質問</span>
+                <button onclick="switchTab('posts')" class="tab-btn flex flex-col items-center p-2 text-blue-600">
+                    <i class="fas fa-edit text-xl"></i>
+                    <span class="text-xs mt-1">投稿・質問</span>
                 </button>
-                <button onclick="showScreen('timer')" class="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600">
-                    <i class="fas fa-clock text-xl mb-1"></i>
-                    <span class="text-xs">タイマー</span>
+                <button onclick="switchTab('timer')" class="tab-btn flex flex-col items-center p-2 text-gray-600">
+                    <i class="fas fa-clock text-xl"></i>
+                    <span class="text-xs mt-1">タイマー</span>
                 </button>
-                <button onclick="showScreen('chat')" class="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600">
-                    <i class="fas fa-comments text-xl mb-1"></i>
-                    <span class="text-xs">チャット</span>
+                <button onclick="switchTab('chat')" class="tab-btn flex flex-col items-center p-2 text-gray-600">
+                    <div class="relative">
+                        <i class="fas fa-comments text-xl"></i>
+                        <div id="chatNotificationBadge" class="notification-dot hidden">!</div>
+                    </div>
+                    <span class="text-xs mt-1">チャット</span>
                 </button>
-                <button onclick="showScreen('flashcard')" class="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600">
-                    <i class="fas fa-cards-blank text-xl mb-1"></i>
-                    <span class="text-xs">単語カード</span>
+                <button onclick="switchTab('profile')" class="tab-btn flex flex-col items-center p-2 text-gray-600">
+                    <i class="fas fa-user text-xl"></i>
+                    <span class="text-xs mt-1">プロフィール</span>
                 </button>
-                <button onclick="showScreen('profile')" class="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600">
-                    <i class="fas fa-user text-xl mb-1"></i>
-                    <span class="text-xs">プロフィール</span>
+                <button onclick="switchTab('settings')" class="tab-btn flex flex-col items-center p-2 text-gray-600">
+                    <i class="fas fa-cog text-xl"></i>
+                    <span class="text-xs mt-1">設定</span>
                 </button>
-                <button onclick="showScreen('settings')" class="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600">
-                    <i class="fas fa-cog text-xl mb-1"></i>
-                    <span class="text-xs">設定</span>
+                <button onclick="switchTab('wordCards')" class="tab-btn flex flex-col items-center p-2 text-gray-600">
+                    <i class="fas fa-clone text-xl"></i>
+                    <span class="text-xs mt-1">単語カード</span>
                 </button>
             </div>
         </nav>
     </div>
 
-    <!-- モーダル類 -->
-    <div id="modalOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div id="modalContent" class="bg-white rounded-lg p-6 w-full max-w-md">
-                <!-- モーダルコンテンツがここに動的に挿入される -->
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 w-96">
+            <h3 class="text-lg font-semibold mb-4">管理者ログイン</h3>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">ユーザーID</label>
+                <input type="text" id="adminUserId" class="w-full px-3 py-2 border border-gray-300 rounded">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">パスワード</label>
+                <input type="password" id="adminPassword" class="w-full px-3 py-2 border border-gray-300 rounded">
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeAdminLogin()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                    キャンセル
+                </button>
+                <button onclick="adminLogin()" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">
+                    ログイン
+                </button>
+            </div>
+            <div id="adminLoginError" class="text-red-500 text-sm mt-2 hidden"></div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="hidden min-h-screen bg-gray-100 p-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">管理者パネル</h2>
+                <button onclick="exitAdmin()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                    管理者モード終了
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- User Management -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">ユーザー管理</h3>
+                    <div id="adminUserList" class="space-y-2 max-h-64 overflow-y-auto">
+                        <!-- Users will be listed here -->
+                    </div>
+                </div>
+
+                <!-- Achievement Management -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">アチーブメント管理</h3>
+                    <button onclick="showAddAchievement()" class="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mb-4">
+                        新しいアチーブメント追加
+                    </button>
+                    <div id="adminAchievementList" class="space-y-2 max-h-48 overflow-y-auto">
+                        <!-- Achievements will be listed here -->
+                    </div>
+                </div>
+
+                <!-- Chat Management -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">チャット管理</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span>全体チャット</span>
+                            <button onclick="toggleGlobalChat()" id="globalChatToggle" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                                閉鎖中
+                            </button>
+                        </div>
+                        <button onclick="showChatModeration()" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            チャット投稿管理
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Settings -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">システム設定</h3>
+                    <div class="space-y-3">
+                        <button onclick="showUserStats()" class="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                            ユーザー統計
+                        </button>
+                        <button onclick="exportData()" class="w-full px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                            データエクスポート
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Super Admin Access -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-4">詳細設定</h3>
+                    <button onclick="showSuperAdminLogin()" class="w-full px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900">
+                        超管理者モード
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Super Admin Login Modal -->
+    <div id="superAdminLoginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 w-96">
+            <h3 class="text-lg font-semibold mb-4">超管理者ログイン</h3>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">名前</label>
+                <input type="text" id="superAdminName" class="w-full px-3 py-2 border border-gray-300 rounded">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">ユーザーID</label>
+                <input type="text" id="superAdminId" class="w-full px-3 py-2 border border-gray-300 rounded">
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeSuperAdminLogin()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                    キャンセル
+                </button>
+                <button onclick="superAdminLogin()" class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900">
+                    アクセス
+                </button>
+            </div>
+            <div id="superAdminLoginError" class="text-red-500 text-sm mt-2 hidden"></div>
+        </div>
+    </div>
+
+    <!-- Super Admin Panel -->
+    <div id="superAdminPanel" class="hidden min-h-screen bg-gray-900 text-white p-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">超管理者パネル</h2>
+                <button onclick="exitSuperAdmin()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                    超管理者モード終了
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Achievement Editor -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">アチーブメント詳細設定</h3>
+                    <div id="achievementEditor" class="space-y-4">
+                        <!-- Achievement editing interface -->
+                    </div>
+                </div>
+
+                <!-- Admin User Management -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">管理者権限設定</h3>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">ユーザー選択</label>
+                        <select id="adminUserSelect" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white">
+                            <option value="">ユーザーを選択</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">管理者パスワード設定</label>
+                        <input type="password" id="setAdminPassword" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white">
+                    </div>
+                    <button onclick="setUserAsAdmin()" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        管理者権限を付与
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // グローバル変数
+        // Global Variables
         let currentUser = null;
-        let currentScreen = 'posts';
+        let currentChat = null;
         let timerInterval = null;
-        let currentTime = 25 * 60; // デフォルト25分
+        let currentTime = 25 * 60; // 25 minutes in seconds
         let isTimerRunning = false;
-        let currentChatTarget = null;
-        let currentChatType = 'user'; // 'user' or 'group'
-        let currentFlashcardSet = null;
-        let currentFlashcardIndex = 0;
+        let isBreakTime = false;
         let studyChart = null;
-        let reminderInterval = null;
+        let currentCardSet = null;
+        let currentCardIndex = 0;
 
-        // データ構造
-        const defaultUser = {
-            name: '早川',
-            id: '1h1y2k7w4a',
-            password: 'kousuke2007',
-            level: 1,
-            exp: 0,
-            points: 0,
-            studyTime: {},
-            achievements: [],
-            expMultiplier: 1,
-            pointMultiplier: 1,
-            profileImage: 'https://via.placeholder.com/100',
-            createdAt: new Date().toISOString()
+        // Initialize app data structure
+        const appData = {
+            users: {
+                '1h1y2k7w4a': {
+                    name: '早川',
+                    id: '1h1y2k7w4a',
+                    password: 'kousuke2007',
+                    level: 1,
+                    exp: 0,
+                    points: 0,
+                    totalStudyTime: 0,
+                    studyHistory: [],
+                    achievements: ['beginner'],
+                    expMultiplier: 1.0,
+                    pointMultiplier: 1.0,
+                    profileImage: null,
+                    isAdmin: true,
+                    adminPassword: 'kousuke2007'
+                }
+            },
+            posts: [],
+            chats: {},
+            groups: {},
+            cardSets: {},
+            achievements: {
+                'beginner': {
+                    name: 'はじめの一歩',
+                    description: '初回ログイン',
+                    condition: 'login_first',
+                    image: '🌅',
+                    rarity: 'common'
+                },
+                'three_days': {
+                    name: '3日坊主じゃない!',
+                    description: '3日連続ログイン',
+                    condition: 'login_consecutive_3',
+                    image: '🌱',
+                    rarity: 'common'
+                },
+                'focus_30min': {
+                    name: '集中の30分',
+                    description: '30分タイマーを完了',
+                    condition: 'timer_complete_30',
+                    image: '🕐',
+                    rarity: 'common'
+                },
+                'first_chat': {
+                    name: '初チャット!',
+                    description: '初回チャット投稿',
+                    condition: 'chat_first',
+                    image: '💬',
+                    rarity: 'common'
+                },
+                'room_debut': {
+                    name: 'ルームデビュー',
+                    description: 'グループチャット参加',
+                    condition: 'group_join_first',
+                    image: '🚪',
+                    rarity: 'common'
+                },
+                'timer_expert_1': {
+                    name: 'タイマー職人Lv.1',
+                    description: 'タイマーを3回使用',
+                    condition: 'timer_use_3',
+                    image: '⏰',
+                    rarity: 'common'
+                },
+                'week_streak': {
+                    name: '1週間の軌跡',
+                    description: '7日連続ログイン',
+                    condition: 'login_consecutive_7',
+                    image: '📅',
+                    rarity: 'uncommon'
+                },
+                'pomodoro_master_1': {
+                    name: 'ポモドーロマスターLv.1',
+                    description: 'ポモドーロを10回完了',
+                    condition: 'pomodoro_complete_10',
+                    image: '🍅👑',
+                    rarity: 'uncommon'
+                },
+                'morning_person': {
+                    name: '朝活の民',
+                    description: '朝6時前に勉強開始を5回',
+                    condition: 'study_morning_5',
+                    image: '🌄',
+                    rarity: 'uncommon'
+                },
+                'night_warrior': {
+                    name: '夜ふかし戦士',
+                    description: '夜10時以降に勉強を10回',
+                    condition: 'study_night_10',
+                    image: '🌙',
+                    rarity: 'uncommon'
+                },
+                'ten_hours': {
+                    name: '10時間突破!',
+                    description: '累計勉強時間10時間達成',
+                    condition: 'study_total_600',
+                    image: '⏱️',
+                    rarity: 'uncommon'
+                },
+                'schedule_master_1': {
+                    name: 'スケジュールマスターLv.1',
+                    description: '1日5時間勉強を3回',
+                    condition: 'study_daily_300_3',
+                    image: '📋',
+                    rarity: 'uncommon'
+                },
+                'teacher': {
+                    name: '教えるってむずい!',
+                    description: '投稿を5回作成',
+                    condition: 'post_create_5',
+                    image: '📖',
+                    rarity: 'uncommon'
+                },
+                'friendship': {
+                    name: '気づけば仲間と',
+                    description: '3人以上のグループチャット作成',
+                    condition: 'group_create_3plus',
+                    image: '🤝',
+                    rarity: 'uncommon'
+                },
+                'weekly_challenger': {
+                    name: '週間チャレンジャー',
+                    description: '1週間で20時間勉強',
+                    condition: 'study_week_1200',
+                    image: '🏔️',
+                    rarity: 'uncommon'
+                },
+                'collector': {
+                    name: '称号を得し者',
+                    description: 'アチーブメントを10個獲得',
+                    condition: 'achievement_count_10',
+                    image: '🏆',
+                    rarity: 'uncommon'
+                },
+                'pomodoro_king': {
+                    name: 'ポモドーロキング',
+                    description: 'ポモドーロを100回完了',
+                    condition: 'pomodoro_complete_100',
+                    image: '🍅👑💫',
+                    rarity: 'epic'
+                },
+                'persistence': {
+                    name: '継続は力なり',
+                    description: '30日連続ログイン',
+                    condition: 'login_consecutive_30',
+                    image: '🏛️',
+                    rarity: 'epic'
+                },
+                'hundred_hours': {
+                    name: '学習時間100時間突破!',
+                    description: '累計勉強時間100時間達成',
+                    condition: 'study_total_6000',
+                    image: '🔥⏰',
+                    rarity: 'epic'
+                },
+                'perfect': {
+                    name: '完全達成者',
+                    description: '秘密の条件を満たす',
+                    condition: 'study_19days_4hours_3weeks',
+                    image: '🥇',
+                    rarity: 'legendary',
+                    hidden: true,
+                    effect: 'exp_point_multiplier_1.5'
+                }
+            },
+            settings: {
+                globalChatEnabled: false,
+                background: 'white'
+            }
         };
 
-        // 初期化
-        function init() {
-            // デフォルトユーザーを作成
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            if (!users.find(u => u.id === defaultUser.id)) {
-                users.push(defaultUser);
-                localStorage.setItem('users', JSON.stringify(users));
+        // Load data from localStorage
+        function loadData() {
+            const saved = localStorage.getItem('studyHomeData');
+            if (saved) {
+                const savedData = JSON.parse(saved);
+                // Merge with default data to ensure all properties exist
+                Object.assign(appData, savedData);
+                // Ensure achievements structure exists
+                if (!appData.achievements) {
+                    appData.achievements = {};
+                }
             }
-
-            // 初期データを設定
-            if (!localStorage.getItem('posts')) {
-                localStorage.setItem('posts', JSON.stringify([]));
-            }
-            if (!localStorage.getItem('chats')) {
-                localStorage.setItem('chats', JSON.stringify({}));
-            }
-            if (!localStorage.getItem('groups')) {
-                localStorage.setItem('groups', JSON.stringify([]));
-            }
-            if (!localStorage.getItem('flashcardSets')) {
-                localStorage.setItem('flashcardSets', JSON.stringify({}));
-            }
-            if (!localStorage.getItem('achievements')) {
-                initializeAchievements();
-            }
-            if (!localStorage.getItem('adminUsers')) {
-                localStorage.setItem('adminUsers', JSON.stringify({}));
-            }
+            saveData();
         }
 
-        // パスワードチェック
-        function checkPassword() {
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('studyHomeData', JSON.stringify(appData));
+        }
+
+        // Access control
+        function checkAccess() {
             const password = document.getElementById('accessPassword').value;
             if (password === '20studyhome25') {
-                document.getElementById('passwordScreen').classList.add('hidden');
+                document.getElementById('accessScreen').classList.add('hidden');
                 document.getElementById('loginScreen').classList.remove('hidden');
             } else {
-                showNotification('パスワードが間違っています', 'error');
+                document.getElementById('accessError').classList.remove('hidden');
             }
         }
 
-        // ログイン
+        // Authentication
+        function toggleForm() {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const toggleButton = document.getElementById('toggleButton');
+            
+            if (loginForm.classList.contains('hidden')) {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                toggleButton.textContent = '新規登録はこちら';
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                toggleButton.textContent = 'ログインはこちら';
+            }
+        }
+
         function login() {
             const name = document.getElementById('loginName').value;
             const id = document.getElementById('loginId').value;
-
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(u => u.name === name && u.id === id);
-
+            const error = document.getElementById('loginError');
+            
+            error.classList.add('hidden');
+            
+            if (!name || !id) {
+                error.textContent = '名前とIDを入力してください';
+                error.classList.remove('hidden');
+                return;
+            }
+            
+            const user = Object.values(appData.users).find(u => u.name === name && u.id === id);
             if (user) {
                 currentUser = user;
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                updateUI();
-                setupReminder();
-                showNotification('ログインしました');
+                startApp();
             } else {
-                showNotification('ユーザー名またはIDが間違っています', 'error');
+                error.textContent = 'ユーザーが見つかりません';
+                error.classList.remove('hidden');
             }
         }
 
-        // 新規登録
         function register() {
             const name = document.getElementById('registerName').value;
             const id = document.getElementById('registerId').value;
-
-            if (!name || !id) {
-                showNotification('ユーザー名とIDを入力してください', 'error');
-                return;
-            }
-
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const error = document.getElementById('loginError');
             
-            if (users.find(u => u.id === id)) {
-                showNotification('このIDは既に使用されています', 'error');
+            error.classList.add('hidden');
+            
+            if (!name || !id) {
+                error.textContent = '名前とIDを入力してください';
+                error.classList.remove('hidden');
                 return;
             }
-
+            
+            if (appData.users[id]) {
+                error.textContent = 'このIDは既に使用されています';
+                error.classList.remove('hidden');
+                return;
+            }
+            
             const newUser = {
-                name,
-                id,
+                name: name,
+                id: id,
                 level: 1,
                 exp: 0,
                 points: 0,
-                studyTime: {},
-                achievements: [],
-                expMultiplier: 1,
-                pointMultiplier: 1,
-                profileImage: 'https://via.placeholder.com/100',
-                createdAt: new Date().toISOString()
+                totalStudyTime: 0,
+                studyHistory: [],
+                achievements: ['beginner'],
+                expMultiplier: 1.0,
+                pointMultiplier: 1.0,
+                profileImage: null,
+                isAdmin: false,
+                adminPassword: null
             };
-
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
             
-            showNotification('アカウントが作成されました');
-            document.getElementById('registerName').value = '';
-            document.getElementById('registerId').value = '';
+            appData.users[id] = newUser;
+            currentUser = newUser;
+            saveData();
+            
+            checkAchievements();
+            startApp();
         }
 
-        // ログアウト
+        function startApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            updateUserDisplay();
+            updatePrivateChatOptions();
+            updateAdminUserList();
+            loadPosts();
+            loadChats();
+            loadCardSets();
+            initializeChart();
+            updateAchievementsDisplay();
+            
+            // Start periodic save and sync
+            setInterval(saveData, 5000);
+            setInterval(syncData, 1000);
+        }
+
         function logout() {
-            if (timerInterval) clearInterval(timerInterval);
-            if (reminderInterval) clearInterval(reminderInterval);
             currentUser = null;
             document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('superAdminPanel').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
+            
+            // Clear form fields
+            document.getElementById('loginName').value = '';
+            document.getElementById('loginId').value = '';
         }
 
-        // UI更新
-        function updateUI() {
-            if (!currentUser) return;
-
-            document.getElementById('userInfo').textContent = `${currentUser.name} (Lv.${currentUser.level})`;
-            document.getElementById('profileName').textContent = currentUser.name;
-            document.getElementById('userLevel').textContent = currentUser.level;
-            document.getElementById('userExp').textContent = currentUser.exp;
-            document.getElementById('userPoints').textContent = currentUser.points;
-
-            const nextLevelExp = getNextLevelExp(currentUser.level);
-            document.getElementById('nextLevelExp').textContent = nextLevelExp;
-            const expProgress = (currentUser.exp % nextLevelExp) / nextLevelExp * 100;
-            document.getElementById('expBar').style.width = `${expProgress}%`;
-
-            updateProfileFrame();
-            updatePosts();
-            updateChatUsersList();
-            updateAchievements();
-            updateFlashcardSets();
-            updateShopPrices();
-        }
-
-        // 画面切り替え
-        function showScreen(screenName) {
-            // すべての画面を非表示
-            document.querySelectorAll('#mainApp > main > div').forEach(screen => {
-                screen.classList.add('hidden');
+        // Tab switching
+        function switchTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
             });
-
-            // 指定された画面を表示
-            document.getElementById(`${screenName}Screen`).classList.remove('hidden');
-            currentScreen = screenName;
-
-            // 画面固有の処理
-            if (screenName === 'timer') {
+            
+            // Show selected tab
+            document.getElementById(tab + 'Tab').classList.add('active');
+            
+            // Update button colors
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-blue-600');
+                btn.classList.add('text-gray-600');
+            });
+            event.target.closest('.tab-btn').classList.remove('text-gray-600');
+            event.target.closest('.tab-btn').classList.add('text-blue-600');
+            
+            // Tab-specific actions
+            if (tab === 'profile') {
+                updateProfileTab();
+            } else if (tab === 'timer') {
                 updateStudyChart();
-            } else if (screenName === 'chat') {
-                updateChatUsersList();
-            } else if (screenName === 'flashcard') {
-                updateFlashcardSets();
-            } else if (screenName === 'profile') {
-                updateAchievements();
             }
         }
 
-        // タイマー機能
+        // User display updates
+        function updateUserDisplay() {
+            if (!currentUser) return;
+            
+            document.getElementById('userPoints').textContent = currentUser.points || 0;
+            document.getElementById('userExp').textContent = currentUser.exp || 0;
+            document.getElementById('userLevel').textContent = currentUser.level || 1;
+            document.getElementById('headerUserName').textContent = currentUser.name;
+            
+            // Update user frame based on total exp
+            const totalExp = currentUser.exp || 0;
+            const frameElement = document.querySelector('#userProfileHeader .user-frame');
+            frameElement.className = 'w-8 h-8 rounded-full bg-gray-300 user-frame flex items-center justify-center';
+            
+            if (totalExp >= 30000000) frameElement.classList.add('frame-diamond');
+            else if (totalExp >= 5900000) frameElement.classList.add('frame-gold');
+            else if (totalExp >= 600000) frameElement.classList.add('frame-silver');
+            else if (totalExp >= 18000) frameElement.classList.add('frame-red');
+            else if (totalExp >= 6000) frameElement.classList.add('frame-green');
+            else frameElement.classList.add('frame-blue');
+        }
+
+        function updateProfileTab() {
+            if (!currentUser) return;
+            
+            document.getElementById('profileName').textContent = currentUser.name;
+            document.getElementById('profileLevel').textContent = currentUser.level || 1;
+            document.getElementById('profilePoints').textContent = currentUser.points || 0;
+            document.getElementById('profileExp').textContent = currentUser.exp || 0;
+            document.getElementById('totalStudyTime').textContent = (currentUser.totalStudyTime || 0) + '分';
+            document.getElementById('editName').value = currentUser.name;
+            
+            // Update profile image
+            if (currentUser.profileImage) {
+                document.getElementById('profileIcon').innerHTML = `<img src="${currentUser.profileImage}" class="w-full h-full object-cover rounded-full">`;
+            }
+        }
+
+        function saveProfile() {
+            if (!currentUser) return;
+            
+            currentUser.name = document.getElementById('editName').value;
+            saveData();
+            updateUserDisplay();
+            alert('プロフィールを保存しました');
+        }
+
+        function changeProfileImage() {
+            document.getElementById('profileImageInput').click();
+        }
+
+        document.getElementById('profileImageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentUser.profileImage = e.target.result;
+                    document.getElementById('profileIcon').innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-full">`;
+                    saveData();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Timer functionality
         function startTimer() {
             if (!isTimerRunning) {
                 isTimerRunning = true;
-                document.getElementById('startTimer').classList.add('hidden');
-                document.getElementById('pauseTimer').classList.remove('hidden');
-
-                timerInterval = setInterval(() => {
-                    currentTime--;
-                    updateTimerDisplay();
-
-                    if (currentTime <= 0) {
-                        completeStudySession();
-                    }
-                }, 1000);
+                timerInterval = setInterval(updateTimer, 1000);
+                document.getElementById('startBtn').textContent = '実行中...';
+                document.getElementById('startBtn').disabled = true;
             }
         }
 
@@ -710,29 +1227,46 @@
             if (isTimerRunning) {
                 isTimerRunning = false;
                 clearInterval(timerInterval);
-                document.getElementById('startTimer').classList.remove('hidden');
-                document.getElementById('pauseTimer').classList.add('hidden');
+                document.getElementById('startBtn').textContent = '開始';
+                document.getElementById('startBtn').disabled = false;
             }
         }
 
         function resetTimer() {
             pauseTimer();
-            currentTime = parseInt(document.getElementById('pomodoroTime').value) * 60;
+            const studyMinutes = parseInt(document.getElementById('studyTime').value) || 25;
+            currentTime = studyMinutes * 60;
+            isBreakTime = false;
             updateTimerDisplay();
         }
 
-        function setPomodoroTimer() {
-            const minutes = parseInt(document.getElementById('pomodoroTime').value);
-            currentTime = minutes * 60;
-            updateTimerDisplay();
-        }
-
-        function setCustomTimer() {
-            const minutes = parseInt(document.getElementById('customTime').value);
-            if (minutes > 0) {
-                currentTime = minutes * 60;
+        function updateTimer() {
+            if (currentTime > 0) {
+                currentTime--;
                 updateTimerDisplay();
-                document.getElementById('customTime').value = '';
+            } else {
+                // Timer finished
+                pauseTimer();
+                
+                if (!isBreakTime) {
+                    // Study time finished
+                    const studyMinutes = parseInt(document.getElementById('studyTime').value) || 25;
+                    const subject = document.getElementById('timerSubject').value;
+                    
+                    addStudyTime(studyMinutes, subject);
+                    
+                    alert('勉強時間が終了しました！休憩時間です。');
+                    
+                    // Start break time
+                    const breakMinutes = parseInt(document.getElementById('breakTime').value) || 5;
+                    currentTime = breakMinutes * 60;
+                    isBreakTime = true;
+                    startTimer();
+                } else {
+                    // Break time finished
+                    alert('休憩時間が終了しました！');
+                    resetTimer();
+                }
             }
         }
 
@@ -743,1212 +1277,95 @@
                 `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
 
-        function completeStudySession() {
-            pauseTimer();
-            const subject = document.getElementById('studySubject').value;
-            const sessionTime = parseInt(document.getElementById('pomodoroTime').value);
+        function addStudyTime(minutes, subject) {
+            if (!currentUser) return;
             
-            recordStudyTime(sessionTime, subject);
+            const studySession = {
+                date: new Date().toISOString().split('T')[0],
+                minutes: minutes,
+                subject: subject,
+                timestamp: Date.now()
+            };
             
-            if (!document.getElementById('quietMode').checked) {
-                showNotification(`お疲れ様でした！${sessionTime}分の学習が完了しました`);
-            }
-
+            if (!currentUser.studyHistory) currentUser.studyHistory = [];
+            currentUser.studyHistory.push(studySession);
+            
+            currentUser.totalStudyTime = (currentUser.totalStudyTime || 0) + minutes;
+            
+            // Add experience and points
+            const baseExp = minutes * 10;
+            const basePoints = Math.floor(minutes / 30) * 50;
+            
+            const finalExp = Math.floor(baseExp * currentUser.expMultiplier * (currentUser.level * 1.01));
+            const finalPoints = Math.floor(basePoints * currentUser.pointMultiplier * (currentUser.level * 1.01));
+            
+            currentUser.exp = (currentUser.exp || 0) + finalExp;
+            currentUser.points = (currentUser.points || 0) + finalPoints;
+            
+            // Check for level up
+            checkLevelUp();
+            
+            // Check achievements
             checkAchievements();
+            
+            saveData();
+            updateUserDisplay();
+            updateStudyChart();
         }
 
-        function recordManualTime() {
-            const hours = parseInt(document.getElementById('manualHours').value) || 0;
-            const minutes = parseInt(document.getElementById('manualMinutes').value) || 0;
-            const totalMinutes = hours * 60 + minutes;
+        function addManualStudyTime() {
+            const subject = document.getElementById('manualSubject').value;
+            const minutes = parseInt(document.getElementById('manualTime').value);
             
-            if (totalMinutes > 0) {
-                const subject = document.getElementById('studySubject').value;
-                recordStudyTime(totalMinutes, subject);
-                document.getElementById('manualHours').value = '';
-                document.getElementById('manualMinutes').value = '';
-                showNotification(`${totalMinutes}分の学習時間を記録しました`);
-                checkAchievements();
+            if (minutes > 0) {
+                addStudyTime(minutes, subject);
+                document.getElementById('manualTime').value = '';
+                alert(`${minutes}分の勉強時間を記録しました！`);
             }
         }
 
-        function recordStudyTime(minutes, subject) {
-            const today = new Date().toDateString();
+        function checkLevelUp() {
+            if (!currentUser) return;
             
-            if (!currentUser.studyTime[today]) {
-                currentUser.studyTime[today] = {};
-            }
-            
-            if (!currentUser.studyTime[today][subject]) {
-                currentUser.studyTime[today][subject] = 0;
-            }
-            
-            currentUser.studyTime[today][subject] += minutes;
-            
-            // ポイントと経験値を追加
-            const points = Math.floor(minutes / 30) * 50 * currentUser.pointMultiplier;
-            const exp = minutes * 10 * currentUser.expMultiplier;
-            
-            currentUser.points += points;
-            addExp(exp);
-            
-            saveUsers();
-            updateUI();
-        }
-
-        // 経験値とレベルアップ
-        function addExp(exp) {
-            currentUser.exp += exp;
-            
-            while (currentUser.exp >= getNextLevelExp(currentUser.level)) {
-                levelUp();
+            const requiredExp = calculateRequiredExp(currentUser.level);
+            if (currentUser.exp >= requiredExp) {
+                currentUser.level++;
+                currentUser.exp -= requiredExp;
+                
+                // Increase multipliers slightly
+                currentUser.expMultiplier *= 1.01;
+                currentUser.pointMultiplier *= 1.01;
+                
+                alert(`レベルアップ！レベル ${currentUser.level} になりました！`);
+                updateUserDisplay();
             }
         }
 
-        function getNextLevelExp(level) {
+        function calculateRequiredExp(level) {
             if (level === 1) return 100;
-            return Math.floor(130 * Math.pow(1.3, level - 2));
+            return Math.floor(100 * Math.pow(1.3, level - 1));
         }
 
-        function levelUp() {
-            currentUser.level++;
-            const multiplier = 1 + (currentUser.level - 1) * 0.01;
-            currentUser.expMultiplier *= 1.01;
-            currentUser.pointMultiplier *= 1.01;
-            
-            showNotification(`レベルアップ！レベル${currentUser.level}になりました！`);
-            updateProfileFrame();
-        }
-
-        function updateProfileFrame() {
-            const profileImg = document.getElementById('profileImage');
-            const totalExp = getTotalExp();
-            
-            profileImg.className = 'w-24 h-24 rounded-full mx-auto mb-4';
-            
-            if (totalExp >= 30000000) {
-                profileImg.classList.add('user-frame-diamond');
-            } else if (totalExp >= 5900000) {
-                profileImg.classList.add('user-frame-gold');
-            } else if (totalExp >= 600000) {
-                profileImg.classList.add('user-frame-silver');
-            } else if (totalExp >= 18000) {
-                profileImg.classList.add('user-frame-red');
-            } else if (totalExp >= 6000) {
-                profileImg.classList.add('user-frame-green');
-            } else {
-                profileImg.classList.add('user-frame-blue');
-            }
-        }
-
-        function getTotalExp() {
-            let total = currentUser.exp;
-            for (let i = 1; i < currentUser.level; i++) {
-                total += getNextLevelExp(i);
-            }
-            return total;
-        }
-
-        // 投稿機能
-        function submitPost() {
-            const content = document.getElementById('postContent').value;
-            const fileInput = document.getElementById('postFile');
-            
-            if (!content.trim()) {
-                showNotification('投稿内容を入力してください', 'error');
-                return;
-            }
-
-            const post = {
-                id: Date.now(),
-                userId: currentUser.id,
-                userName: currentUser.name,
-                content,
-                file: null,
-                timestamp: new Date().toISOString()
-            };
-
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    post.file = {
-                        name: file.name,
-                        type: file.type,
-                        data: e.target.result
-                    };
-                    savePosts(post);
-                };
-                reader.readAsDataURL(file);
-            } else {
-                savePosts(post);
-            }
-        }
-
-        function savePosts(post) {
-            const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-            posts.unshift(post);
-            localStorage.setItem('posts', JSON.stringify(posts));
-            
-            document.getElementById('postContent').value = '';
-            document.getElementById('postFile').value = '';
-            
-            updatePosts();
-            showNotification('投稿しました');
-        }
-
-        function updatePosts() {
-            const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-            const postsList = document.getElementById('postsList');
-            
-            postsList.innerHTML = posts.map(post => `
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                                ${post.userName.charAt(0)}
-                            </div>
-                            <div>
-                                <p class="font-semibold">${post.userName}</p>
-                                <p class="text-sm text-gray-500">${new Date(post.timestamp).toLocaleString()}</p>
-                            </div>
-                        </div>
-                        ${post.userId === currentUser.id || isAdmin() ? 
-                            `<button onclick="deletePost(${post.id})" class="text-red-500 hover:text-red-700">
-                                <i class="fas fa-trash"></i>
-                            </button>` : ''
-                        }
-                    </div>
-                    <p class="text-gray-800 mb-3">${post.content}</p>
-                    ${post.file ? 
-                        post.file.type.startsWith('image/') ?
-                            `<img src="${post.file.data}" alt="${post.file.name}" class="max-w-full h-auto rounded-lg">` :
-                            `<a href="${post.file.data}" download="${post.file.name}" class="text-blue-500 hover:underline">
-                                <i class="fas fa-file"></i> ${post.file.name}
-                            </a>`
-                        : ''
-                    }
-                </div>
-            `).join('');
-        }
-
-        function deletePost(postId) {
-            if (confirm('この投稿を削除しますか？')) {
-                const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-                const filteredPosts = posts.filter(post => post.id !== postId);
-                localStorage.setItem('posts', JSON.stringify(filteredPosts));
-                updatePosts();
-                showNotification('投稿を削除しました');
-            }
-        }
-
-        // チャット機能
-        function updateChatUsersList() {
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const usersList = document.getElementById('usersList');
-            
-            usersList.innerHTML = users
-                .filter(user => user.id !== currentUser.id)
-                .map(user => `
-                    <button onclick="selectChatUser('${user.id}')" class="w-full text-left p-2 rounded hover:bg-gray-100 ${currentChatTarget === user.id ? 'bg-blue-100' : ''}">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                ${user.name.charAt(0)}
-                            </div>
-                            <span class="text-sm">${user.name}</span>
-                        </div>
-                    </button>
-                `).join('');
-
-            // グループチャット一覧も更新
-            const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-            const groupsList = document.getElementById('groupsList');
-            
-            groupsList.innerHTML = groups
-                .filter(group => group.members.includes(currentUser.id))
-                .map(group => `
-                    <button onclick="selectChatGroup('${group.id}')" class="w-full text-left p-2 rounded hover:bg-gray-100 ${currentChatTarget === group.id && currentChatType === 'group' ? 'bg-blue-100' : ''}">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <span class="text-sm">${group.name}</span>
-                        </div>
-                    </button>
-                `).join('');
-        }
-
-        function selectChatUser(userId) {
-            currentChatTarget = userId;
-            currentChatType = 'user';
-            updateChatArea();
-            document.getElementById('chatInput').disabled = false;
-            document.getElementById('sendButton').disabled = false;
-            updateChatUsersList();
-        }
-
-        function selectChatGroup(groupId) {
-            currentChatTarget = groupId;
-            currentChatType = 'group';
-            updateChatArea();
-            document.getElementById('chatInput').disabled = false;
-            document.getElementById('sendButton').disabled = false;
-            updateChatUsersList();
-        }
-
-        function updateChatArea() {
-            const chatArea = document.getElementById('chatArea');
-            const chats = JSON.parse(localStorage.getItem('chats') || '{}');
-            
-            let chatKey;
-            if (currentChatType === 'group') {
-                chatKey = `group_${currentChatTarget}`;
-            } else {
-                chatKey = [currentUser.id, currentChatTarget].sort().join('_');
-            }
-            
-            const messages = chats[chatKey] || [];
-            
-            chatArea.innerHTML = messages.map(msg => `
-                <div class="chat-message ${msg.senderId === currentUser.id ? 'ml-8' : 'mr-8'}">
-                    <div class="flex items-start space-x-2">
-                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                            ${msg.senderName.charAt(0)}
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-2 mb-1">
-                                <span class="font-semibold text-sm">${msg.senderName}</span>
-                                <span class="text-xs text-gray-500">${new Date(msg.timestamp).toLocaleTimeString()}</span>
-                                ${msg.senderId === currentUser.id ? 
-                                    `<button onclick="deleteChatMessage('${chatKey}', ${msg.id})" class="text-red-500 hover:text-red-700 text-xs">
-                                        <i class="fas fa-trash"></i>
-                                    </button>` : ''
-                                }
-                            </div>
-                            <p class="text-gray-800">${msg.content}</p>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-            
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const content = input.value.trim();
-            
-            if (!content || !currentChatTarget) return;
-            
-            const message = {
-                id: Date.now(),
-                senderId: currentUser.id,
-                senderName: currentUser.name,
-                content,
-                timestamp: new Date().toISOString()
-            };
-            
-            const chats = JSON.parse(localStorage.getItem('chats') || '{}');
-            
-            let chatKey;
-            if (currentChatType === 'group') {
-                chatKey = `group_${currentChatTarget}`;
-            } else {
-                chatKey = [currentUser.id, currentChatTarget].sort().join('_');
-            }
-            
-            if (!chats[chatKey]) {
-                chats[chatKey] = [];
-            }
-            
-            chats[chatKey].push(message);
-            localStorage.setItem('chats', JSON.stringify(chats));
-            
-            input.value = '';
-            updateChatArea();
-            
-            checkFirstChatAchievement();
-        }
-
-        function deleteChatMessage(chatKey, messageId) {
-            if (confirm('このメッセージを削除しますか？')) {
-                const chats = JSON.parse(localStorage.getItem('chats') || '{}');
-                if (chats[chatKey]) {
-                    chats[chatKey] = chats[chatKey].filter(msg => msg.id !== messageId);
-                    localStorage.setItem('chats', JSON.stringify(chats));
-                    updateChatArea();
-                }
-            }
-        }
-
-        function showCreateGroup() {
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const otherUsers = users.filter(user => user.id !== currentUser.id);
-            
-            const modalContent = `
-                <h3 class="text-lg font-semibold mb-4">グループ作成</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">グループ名</label>
-                        <input type="text" id="groupName" placeholder="グループ名を入力" class="w-full p-2 border rounded">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">メンバーを選択</label>
-                        <div id="groupMembers" class="space-y-2 max-h-40 overflow-y-auto">
-                            ${otherUsers.map(user => `
-                                <label class="flex items-center space-x-2">
-                                    <input type="checkbox" value="${user.id}" class="group-member-checkbox">
-                                    <span>${user.name}</span>
-                                </label>
-                            `).join('')}
-                        </div>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="createGroup()" class="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-                            作成
-                        </button>
-                        <button onclick="closeModal()" class="flex-1 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
-                            キャンセル
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            showModal(modalContent);
-        }
-
-        function createGroup() {
-            const groupName = document.getElementById('groupName').value;
-            const checkboxes = document.querySelectorAll('.group-member-checkbox:checked');
-            const members = Array.from(checkboxes).map(cb => cb.value);
-            members.push(currentUser.id); // 作成者も追加
-            
-            if (!groupName.trim()) {
-                showNotification('グループ名を入力してください', 'error');
-                return;
-            }
-            
-            if (members.length < 2) {
-                showNotification('最低1人のメンバーを選択してください', 'error');
-                return;
-            }
-            
-            const groups = JSON.parse(localStorage.getItem('groups') || '[]');
-            const newGroup = {
-                id: Date.now().toString(),
-                name: groupName,
-                members,
-                createdBy: currentUser.id,
-                createdAt: new Date().toISOString()
-            };
-            
-            groups.push(newGroup);
-            localStorage.setItem('groups', JSON.stringify(groups));
-            
-            closeModal();
-            updateChatUsersList();
-            showNotification('グループを作成しました');
-        }
-
-        // 単語カード機能
-        function updateFlashcardSets() {
-            const flashcardSets = JSON.parse(localStorage.getItem('flashcardSets') || '{}');
-            const userSets = flashcardSets[currentUser.id] || {};
-            const setsContainer = document.getElementById('flashcardSets');
-            
-            setsContainer.innerHTML = Object.entries(userSets).map(([setId, setData]) => `
-                <div class="bg-white rounded-lg shadow p-4 mb-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-semibold">${setData.name}</h3>
-                        <div class="space-x-2">
-                            <span class="text-sm text-gray-600">${setData.cards.length}枚</span>
-                            <button onclick="selectFlashcardSet('${setId}')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
-                                学習
-                            </button>
-                            <button onclick="deleteFlashcardSet('${setId}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
-                                削除
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between mt-2">
-                        <div class="flex items-center space-x-2">
-                            <label class="text-sm">公開設定:</label>
-                            <input type="checkbox" ${setData.isPublic ? 'checked' : ''} onchange="toggleFlashcardSetPublic('${setId}')" class="toggle">
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function showCreateFlashcardSet() {
-            const modalContent = `
-                <h3 class="text-lg font-semibold mb-4">新しい単語カードセット</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">セット名</label>
-                        <input type="text" id="flashcardSetName" placeholder="例: 英検3級" class="w-full p-2 border rounded">
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="createFlashcardSet()" class="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-                            作成
-                        </button>
-                        <button onclick="closeModal()" class="flex-1 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
-                            キャンセル
-                        </button>
-                    </div>
-                </div>
-            `;
-            showModal(modalContent);
-        }
-
-        function createFlashcardSet() {
-            const setName = document.getElementById('flashcardSetName').value;
-            
-            if (!setName.trim()) {
-                showNotification('セット名を入力してください', 'error');
-                return;
-            }
-            
-            const flashcardSets = JSON.parse(localStorage.getItem('flashcardSets') || '{}');
-            if (!flashcardSets[currentUser.id]) {
-                flashcardSets[currentUser.id] = {};
-            }
-            
-            const setId = Date.now().toString();
-            flashcardSets[currentUser.id][setId] = {
-                name: setName,
-                cards: [],
-                isPublic: false,
-                createdAt: new Date().toISOString()
-            };
-            
-            localStorage.setItem('flashcardSets', JSON.stringify(flashcardSets));
-            
-            closeModal();
-            updateFlashcardSets();
-            showNotification('単語カードセットを作成しました');
-        }
-
-        function selectFlashcardSet(setId) {
-            currentFlashcardSet = setId;
-            currentFlashcardIndex = 0;
-            document.getElementById('addCardBtn').style.display = 'block';
-            displayCurrentFlashcard();
-        }
-
-        function displayCurrentFlashcard() {
-            const flashcardSets = JSON.parse(localStorage.getItem('flashcardSets') || '{}');
-            const userSets = flashcardSets[currentUser.id] || {};
-            const currentSet = userSets[currentFlashcardSet];
-            
-            if (!currentSet || currentSet.cards.length === 0) {
-                document.getElementById('flashcardDisplay').innerHTML = `
-                    <p class="text-gray-500">このセットにはまだカードがありません</p>
-                    <button onclick="showAddFlashcard()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                        カードを追加
-                    </button>
-                `;
-                return;
-            }
-            
-            const card = currentSet.cards[currentFlashcardIndex];
-            
-            document.getElementById('flashcardDisplay').innerHTML = `
-                <div class="text-center mb-4">
-                    <h3 class="text-lg font-semibold mb-2">${currentSet.name}</h3>
-                    <p class="text-sm text-gray-600">${currentFlashcardIndex + 1} / ${currentSet.cards.length}</p>
-                </div>
-                
-                <div class="flashcard" onclick="flipCard(this)">
-                    <div class="flashcard-inner">
-                        <div class="flashcard-front">
-                            <div class="p-4">
-                                <p class="text-lg">${card.front}</p>
-                            </div>
-                        </div>
-                        <div class="flashcard-back">
-                            <div class="p-4">
-                                <p class="text-lg">${card.back}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex justify-center space-x-4 mt-6">
-                    <button onclick="prevCard()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" ${currentFlashcardIndex === 0 ? 'disabled' : ''}>
-                        前へ
-                    </button>
-                    <button onclick="nextCard()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" ${currentFlashcardIndex === currentSet.cards.length - 1 ? 'disabled' : ''}>
-                        次へ
-                    </button>
-                </div>
-            `;
-        }
-
-        function flipCard(cardElement) {
-            cardElement.classList.toggle('flipped');
-        }
-
-        function prevCard() {
-            if (currentFlashcardIndex > 0) {
-                currentFlashcardIndex--;
-                displayCurrentFlashcard();
-            }
-        }
-
-        function nextCard() {
-            const flashcardSets = JSON.parse(localStorage.getItem('flashcardSets') || '{}');
-            const userSets = flashcardSets[currentUser.id] || {};
-            const currentSet = userSets[currentFlashcardSet];
-            
-            if (currentFlashcardIndex < currentSet.cards.length - 1) {
-                currentFlashcardIndex++;
-                displayCurrentFlashcard();
-            }
-        }
-
-        function showAddFlashcard() {
-            const modalContent = `
-                <h3 class="text-lg font-semibold mb-4">カード追加</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">表面（問題）</label>
-                        <textarea id="cardFront" placeholder="例: apple" class="w-full p-2 border rounded h-20"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">裏面（答え）</label>
-                        <textarea id="cardBack" placeholder="例: りんご" class="w-full p-2 border rounded h-20"></textarea>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="addFlashcard()" class="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-                            追加
-                        </button>
-                        <button onclick="closeModal()" class="flex-1 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
-                            キャンセル
-                        </button>
-                    </div>
-                </div>
-            `;
-            showModal(modalContent);
-        }
-
-        function addFlashcard() {
-            const front = document.getElementById('cardFront').value.trim();
-            const back = document.getElementById('cardBack').value.trim();
-            
-            if (!front || !back) {
-                showNotification('表面と裏面を入力してください', 'error');
-                return;
-            }
-            
-            const flashcardSets = JSON.parse(localStorage.getItem('flashcardSets') || '{}');
-            if (!flashcardSets[currentUser.id][currentFlashcardSet]) {
-                return;
-            }
-            
-            flashcardSets[currentUser.id][currentFlashcardSet].cards.push({
-                id: Date.now(),
-                front,
-                back,
-                createdAt: new Date().toISOString()
-            });
-            
-            localStorage.setItem('flashcardSets', JSON.stringify(flashcardSets));
-            
-            closeModal();
-            displayCurrentFlashcard();
-            updateFlashcardSets();
-            showNotification('カードを追加しました');
-        }
-
-        function deleteFlashcardSet(setId) {
-            if (confirm('この単語カードセットを削除しますか？')) {
-                const flashcardSets = JSON.parse(localStorage.getItem('flashcardSets') || '{}');
-                delete flashcardSets[currentUser.id][setId];
-                localStorage.setItem('flashcardSets', JSON.stringify(flashcardSets));
-                
-                if (currentFlashcardSet === setId) {
-                    currentFlashcardSet = null;
-                    document.getElementById('addCardBtn').style.display = 'none';
-                    document.getElementById('flashcardDisplay').innerHTML = '<p class="text-gray-500">単語カードセットを選択してください</p>';
-                }
-                
-                updateFlashcardSets();
-                showNotification('単語カードセットを削除しました');
-            }
-        }
-
-        function toggleFlashcardSetPublic(setId) {
-            const flashcardSets = JSON.parse(localStorage.getItem('flashcardSets') || '{}');
-            if (flashcardSets[currentUser.id][setId]) {
-                flashcardSets[currentUser.id][setId].isPublic = !flashcardSets[currentUser.id][setId].isPublic;
-                localStorage.setItem('flashcardSets', JSON.stringify(flashcardSets));
-            }
-        }
-
-        // アチーブメント機能
-        function initializeAchievements() {
-            const achievements = {
-                'first_step': {
-                    name: 'はじめの一歩',
-                    description: '初回ログイン',
-                    condition: 'login_once',
-                    image: '🦶',
-                    rarity: 'common'
-                },
-                'not_3days': {
-                    name: '3日坊主じゃない!',
-                    description: '3日連続でログイン',
-                    condition: 'login_streak_3',
-                    image: '🌱',
-                    rarity: 'common'
-                },
-                'focus_30': {
-                    name: '集中の30分',
-                    description: '30分間の学習を完了',
-                    condition: 'study_30min',
-                    image: '🕐',
-                    rarity: 'common'
-                },
-                'first_chat': {
-                    name: '初チャット!',
-                    description: '初回チャット送信',
-                    condition: 'chat_once',
-                    image: '💬',
-                    rarity: 'common'
-                },
-                'room_debut': {
-                    name: 'ルームデビュー',
-                    description: '初回グループチャット参加',
-                    condition: 'join_group_once',
-                    image: '🚪',
-                    rarity: 'common'
-                },
-                'timer_crafter_1': {
-                    name: 'タイマー職人Lv.1',
-                    description: 'タイマーを3回使用',
-                    condition: 'timer_use_3',
-                    image: '⏲️',
-                    rarity: 'common'
-                },
-                'week_trace': {
-                    name: '1週間の軌跡',
-                    description: '7日連続でログイン',
-                    condition: 'login_streak_7',
-                    image: '📅',
-                    rarity: 'normal'
-                },
-                'pomodoro_master_1': {
-                    name: 'ポモドーロマスターLv.1',
-                    description: 'ポモドーロタイマーを10回完了',
-                    condition: 'pomodoro_complete_10',
-                    image: '🍅',
-                    rarity: 'normal'
-                },
-                'morning_people': {
-                    name: '朝活の民',
-                    description: '朝6時〜9時に5回学習',
-                    condition: 'morning_study_5',
-                    image: '🌅',
-                    rarity: 'normal'
-                },
-                'night_warrior': {
-                    name: '夜ふかし戦士',
-                    description: '夜22時〜2時に5回学習',
-                    condition: 'night_study_5',
-                    image: '🌙',
-                    rarity: 'normal'
-                },
-                '10hour_break': {
-                    name: '10時間突破!',
-                    description: '累計学習時間10時間達成',
-                    condition: 'total_study_10h',
-                    image: '🎯',
-                    rarity: 'normal'
-                },
-                'schedule_master_1': {
-                    name: 'スケジュールマスターLv.1',
-                    description: '5日間毎日学習記録',
-                    condition: 'daily_study_5',
-                    image: '📋',
-                    rarity: 'normal'
-                },
-                'teaching_hard': {
-                    name: '教えるってむずい!',
-                    description: '初回投稿',
-                    condition: 'post_once',
-                    image: '📚',
-                    rarity: 'normal'
-                },
-                'found_friends': {
-                    name: '気づけば仲間と',
-                    description: '3人以上とチャット',
-                    condition: 'chat_with_3_users',
-                    image: '👥',
-                    rarity: 'normal'
-                },
-                'weekly_challenger': {
-                    name: '週間チャレンジャー',
-                    description: '1週間で20時間学習',
-                    condition: 'week_study_20h',
-                    image: '🏔️',
-                    rarity: 'normal'
-                },
-                'title_holder': {
-                    name: '称号を得し者',
-                    description: '5個のアチーブメント獲得',
-                    condition: 'achievements_5',
-                    image: '🏆',
-                    rarity: 'normal'
-                },
-                'pomodoro_king': {
-                    name: 'ポモドーロキング',
-                    description: 'ポモドーロタイマーを100回完了',
-                    condition: 'pomodoro_complete_100',
-                    image: '👑',
-                    rarity: 'rare'
-                },
-                'persistence_power': {
-                    name: '継続は力なり',
-                    description: '30日連続でログイン',
-                    condition: 'login_streak_30',
-                    image: '🏛️',
-                    rarity: 'rare'
-                },
-                '100hour_break': {
-                    name: '学習時間100時間突破!',
-                    description: '累計学習時間100時間達成',
-                    condition: 'total_study_100h',
-                    image: '🔥',
-                    rarity: 'rare'
-                },
-                'perfect_achiever': {
-                    name: '完全達成者',
-                    description: '隠しアチーブメント',
-                    condition: 'hidden_special',
-                    image: '💎',
-                    rarity: 'legendary',
-                    hidden: true
-                }
-            };
-            
-            localStorage.setItem('achievements', JSON.stringify(achievements));
-        }
-
-        function updateAchievements() {
-            const achievements = JSON.parse(localStorage.getItem('achievements') || '{}');
-            const achievementsList = document.getElementById('achievementsList');
-            
-            achievementsList.innerHTML = Object.entries(achievements)
-                .filter(([id, achievement]) => !achievement.hidden || currentUser.achievements.includes(id))
-                .map(([id, achievement]) => {
-                    const unlocked = currentUser.achievements.includes(id);
-                    const rarityColor = {
-                        common: 'bg-blue-200',
-                        normal: 'bg-green-200',
-                        rare: 'bg-purple-200',
-                        legendary: 'bg-yellow-200'
-                    }[achievement.rarity];
-                    
-                    return `
-                        <div class="text-center">
-                            <div class="achievement-badge ${rarityColor} ${unlocked ? '' : 'opacity-50'}">
-                                ${achievement.image}
-                            </div>
-                            <p class="text-xs font-semibold mt-1">${achievement.name}</p>
-                            <p class="text-xs text-gray-600">${achievement.description}</p>
-                        </div>
-                    `;
-                }).join('');
-        }
-
-        function checkAchievements() {
-            const achievements = JSON.parse(localStorage.getItem('achievements') || '{}');
-            let newAchievements = [];
-            
-            // 各アチーブメントの条件をチェック
-            Object.entries(achievements).forEach(([id, achievement]) => {
-                if (!currentUser.achievements.includes(id)) {
-                    if (checkAchievementCondition(achievement.condition)) {
-                        currentUser.achievements.push(id);
-                        newAchievements.push(achievement.name);
-                        
-                        // 完全達成者の特別効果
-                        if (id === 'perfect_achiever') {
-                            currentUser.expMultiplier *= 1.5;
-                            currentUser.pointMultiplier *= 1.5;
-                        }
-                    }
-                }
-            });
-            
-            if (newAchievements.length > 0) {
-                saveUsers();
-                updateAchievements();
-                showNotification(`アチーブメント獲得: ${newAchievements.join(', ')}`);
-            }
-        }
-
-        function checkAchievementCondition(condition) {
-            // アチーブメント条件の判定ロジック（簡略化版）
-            switch (condition) {
-                case 'login_once':
-                    return true; // ログイン時点で達成
-                case 'study_30min':
-                    return getTotalStudyTime() >= 30;
-                case 'chat_once':
-                    return hasChattedOnce();
-                case 'post_once':
-                    return hasPostedOnce();
-                case 'total_study_10h':
-                    return getTotalStudyTime() >= 600; // 10時間 = 600分
-                case 'total_study_100h':
-                    return getTotalStudyTime() >= 6000; // 100時間 = 6000分
-                case 'achievements_5':
-                    return currentUser.achievements.length >= 5;
-                case 'hidden_special':
-                    return checkSpecialCondition();
-                default:
-                    return false;
-            }
-        }
-
-        function getTotalStudyTime() {
-            let total = 0;
-            Object.values(currentUser.studyTime).forEach(dayData => {
-                Object.values(dayData).forEach(time => {
-                    total += time;
-                });
-            });
-            return total;
-        }
-
-        function hasChattedOnce() {
-            const chats = JSON.parse(localStorage.getItem('chats') || '{}');
-            return Object.values(chats).some(chat => 
-                chat.some(msg => msg.senderId === currentUser.id)
-            );
-        }
-
-        function hasPostedOnce() {
-            const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-            return posts.some(post => post.userId === currentUser.id);
-        }
-
-        function checkSpecialCondition() {
-            // 3週間の間に4時間以上勉強した日が19日以上ある
-            const now = new Date();
-            const threeWeeksAgo = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000);
-            
-            let validDays = 0;
-            Object.entries(currentUser.studyTime).forEach(([dateStr, dayData]) => {
-                const date = new Date(dateStr);
-                if (date >= threeWeeksAgo && date <= now) {
-                    const totalMinutes = Object.values(dayData).reduce((sum, time) => sum + time, 0);
-                    if (totalMinutes >= 240) { // 4時間 = 240分
-                        validDays++;
-                    }
-                }
-            });
-            
-            return validDays >= 19;
-        }
-
-        function checkFirstChatAchievement() {
-            if (!currentUser.achievements.includes('first_chat')) {
-                currentUser.achievements.push('first_chat');
-                saveUsers();
-                updateAchievements();
-                showNotification('アチーブメント獲得: 初チャット!');
-            }
-        }
-
-        // ショップ機能
-        function updateShopPrices() {
-            const expBoosterCount = currentUser.expBoosterCount || 0;
-            const allBoosterCount = currentUser.allBoosterCount || 0;
-            
-            const expPrice = Math.floor(100 * Math.pow(1.3, expBoosterCount));
-            const allPrice = Math.floor(200 * Math.pow(1.3, allBoosterCount));
-            
-            document.getElementById('expBoosterPrice').textContent = expPrice;
-            document.getElementById('allBoosterPrice').textContent = allPrice;
-        }
-
-        function buyExpBooster() {
-            const expBoosterCount = currentUser.expBoosterCount || 0;
-            const price = Math.floor(100 * Math.pow(1.3, expBoosterCount));
-            
-            if (currentUser.points >= price) {
-                currentUser.points -= price;
-                currentUser.expMultiplier *= 1.1;
-                currentUser.expBoosterCount = (currentUser.expBoosterCount || 0) + 1;
-                
-                saveUsers();
-                updateUI();
-                updateShopPrices();
-                showNotification('経験値ブースターを購入しました');
-            } else {
-                showNotification('ポイントが不足しています', 'error');
-            }
-        }
-
-        function buyAllBooster() {
-            const allBoosterCount = currentUser.allBoosterCount || 0;
-            const price = Math.floor(200 * Math.pow(1.3, allBoosterCount));
-            
-            if (currentUser.points >= price) {
-                currentUser.points -= price;
-                currentUser.expMultiplier *= 1.2;
-                currentUser.pointMultiplier *= 1.2;
-                currentUser.allBoosterCount = (currentUser.allBoosterCount || 0) + 1;
-                
-                saveUsers();
-                updateUI();
-                updateShopPrices();
-                showNotification('全能ブースターを購入しました');
-            } else {
-                showNotification('ポイントが不足しています', 'error');
-            }
-        }
-
-        // 設定機能
-        function changeBackgroundColor() {
-            const color = document.getElementById('backgroundColor').value;
-            document.body.style.backgroundColor = color;
-            localStorage.setItem(`bgColor_${currentUser.id}`, color);
-        }
-
-        function changeBackgroundImage() {
-            const input = document.getElementById('backgroundImage');
-            const file = input.files[0];
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.body.style.backgroundImage = `url(${e.target.result})`;
-                    document.body.style.backgroundSize = 'cover';
-                    localStorage.setItem(`bgImage_${currentUser.id}`, e.target.result);
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // プロフィール機能
-        function updateUsername() {
-            const newName = document.getElementById('newUsername').value.trim();
-            
-            if (!newName) {
-                showNotification('新しいユーザー名を入力してください', 'error');
-                return;
-            }
-            
-            currentUser.name = newName;
-            saveUsers();
-            updateUI();
-            document.getElementById('newUsername').value = '';
-            showNotification('ユーザー名を更新しました');
-        }
-
-        function updateProfileImage() {
-            const input = document.getElementById('profileImageInput');
-            const file = input.files[0];
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentUser.profileImage = e.target.result;
-                    document.getElementById('profileImage').src = e.target.result;
-                    saveUsers();
-                    showNotification('プロフィール画像を更新しました');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // 管理機能
-        function adminLogin() {
-            const password = document.getElementById('adminPassword').value;
-            const adminUsers = JSON.parse(localStorage.getItem('adminUsers') || '{}');
-            
-            if (adminUsers[currentUser.id] && adminUsers[currentUser.id] === password) {
-                showScreen('admin');
-                updateAdminUI();
-                showNotification('管理画面にアクセスしました');
-            } else {
-                showNotification('管理者パスワードが間違っています', 'error');
-            }
-        }
-
-        function isAdmin() {
-            const adminUsers = JSON.parse(localStorage.getItem('adminUsers') || '{}');
-            return adminUsers.hasOwnProperty(currentUser.id);
-        }
-
-        function updateAdminUI() {
-            // ユーザー一覧を更新
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const adminUsersList = document.getElementById('adminUsersList');
-            
-            adminUsersList.innerHTML = users.map(user => `
-                <div class="flex justify-between items-center p-4 border rounded">
-                    <div>
-                        <p class="font-semibold">${user.name}</p>
-                        <p class="text-sm text-gray-600">ID: ${user.id}</p>
-                        <p class="text-sm text-gray-600">レベル: ${user.level}</p>
-                    </div>
-                    <div class="space-x-2">
-                        <button onclick="banUser('${user.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
-                            アクセス禁止
-                        </button>
-                        <button onclick="makeAdmin('${user.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
-                            管理者に
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-            
-            // 投稿一覧を更新
-            const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-            const adminPostsList = document.getElementById('adminPostsList');
-            
-            adminPostsList.innerHTML = posts.map(post => `
-                <div class="flex justify-between items-center p-2 border rounded text-sm">
-                    <div class="flex-1">
-                        <p class="font-medium">${post.userName}: ${post.content.substring(0, 50)}...</p>
-                        <p class="text-gray-500">${new Date(post.timestamp).toLocaleString()}</p>
-                    </div>
-                    <button onclick="deletePost(${post.id})" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function banUser(userId) {
-            if (confirm('このユーザーをアクセス禁止にしますか？')) {
-                // 実装省略（実際のアプリケーションでは適切な処理を行う）
-                showNotification('ユーザーをアクセス禁止にしました');
-            }
-        }
-
-        function makeAdmin(userId) {
-            const password = prompt('新しい管理者パスワードを設定してください:');
-            if (password) {
-                const adminUsers = JSON.parse(localStorage.getItem('adminUsers') || '{}');
-                adminUsers[userId] = password;
-                localStorage.setItem('adminUsers', JSON.stringify(adminUsers));
-                showNotification('管理者権限を追加しました');
-            }
-        }
-
-        function toggleGlobalChat() {
-            const enabled = document.getElementById('globalChatEnabled').checked;
-            localStorage.setItem('globalChatEnabled', enabled.toString());
-            showNotification(enabled ? '全体チャットを開放しました' : '全体チャットを閉鎖しました');
-        }
-
-        function showCreateAchievement() {
-            const modalContent = `
-                <h3 class="text-lg font-semibold mb-4">新しいアチーブメント</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">名前</label>
-                        <input type="text" id="achievementName" class="w-full p-2 border rounded">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">説明</label>
-                        <textarea id="achievementDesc" class="w-full p-2 border rounded h-20"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">条件タイプ</label>
-                        <select id="achievementCondition" class="w-full p-2 border rounded">
-                            <option value="login_streak">連続ログイン</option>
-                            <option value="study_time">学習時間</option>
-                            <option value="timer_use">タイマー使用回数</option>
-                            <option value="chat_count">チャット回数</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">条件値</label>
-                        <input type="number" id="achievementValue" class="w-full p-2 border rounded">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">画像（絵文字）</label>
-                        <input type="text" id="achievementImage" class="w-full p-2 border rounded">
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="createAchievement()" class="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-                            作成
-                        </button>
-                        <button onclick="closeModal()" class="flex-1 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
-                            キャンセル
-                        </button>
-                    </div>
-                </div>
-            `;
-            showModal(modalContent);
-        }
-
-        function createAchievement() {
-            const name = document.getElementById('achievementName').value;
-            const desc = document.getElementById('achievementDesc').value;
-            const conditionType = document.getElementById('achievementCondition').value;
-            const value = document.getElementById('achievementValue').value;
-            const image = document.getElementById('achievementImage').value;
-            
-            if (!name || !desc || !value || !image) {
-                showNotification('すべてのフィールドを入力してください', 'error');
-                return;
-            }
-            
-            const achievements = JSON.parse(localStorage.getItem('achievements') || '{}');
-            const id = `custom_${Date.now()}`;
-            
-            achievements[id] = {
-                name,
-                description: desc,
-                condition: `${conditionType}_${value}`,
-                image,
-                rarity: 'normal'
-            };
-            
-            localStorage.setItem('achievements', JSON.stringify(achievements));
-            closeModal();
-            showNotification('新しいアチーブメントを作成しました');
-        }
-
-        function showSuperAdmin() {
-            if (currentUser.name === '早川' && currentUser.id === '1h1y2k7w4a') {
-                showNotification('超管理者モードにアクセスしました');
-                // 超管理者機能の実装は省略
-            } else {
-                showNotification('アクセス権限がありません', 'error');
-            }
-        }
-
-        // 統計・グラフ機能
-        function updateStudyChart() {
-            const canvas = document.getElementById('studyChart');
-            const ctx = canvas.getContext('2d');
-            
-            if (studyChart) {
-                studyChart.destroy();
-            }
-            
-            const period = document.getElementById('chartPeriod').value;
-            const data = getStudyData(period);
+        // Chart functionality
+        function initializeChart() {
+            const ctx = document.getElementById('studyChart').getContext('2d');
             
             studyChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: data.labels,
+                    labels: [],
                     datasets: [{
-                        label: '学習時間（分）',
-                        data: data.values,
+                        label: '勉強時間（分）',
+                        data: [],
                         borderColor: 'rgb(59, 130, 246)',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4
+                        tension: 0.3
+                    }, {
+                        label: '平均勉強時間（分）',
+                        data: [],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderDash: [5, 5]
                     }]
                 },
                 options: {
@@ -1961,108 +1378,938 @@
                     }
                 }
             });
+            
+            updateStudyChart();
         }
 
-        function getStudyData(period) {
-            const data = { labels: [], values: [] };
-            const studyTime = currentUser.studyTime;
+        function updateStudyChart() {
+            if (!studyChart || !currentUser) return;
             
-            if (period === 'week') {
-                for (let i = 6; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    const dateStr = date.toDateString();
+            const period = document.getElementById('chartPeriod').value;
+            const days = period === 'week' ? 7 : 30;
+            
+            const labels = [];
+            const data = [];
+            const avgData = [];
+            
+            // Calculate average from all users
+            const allUsers = Object.values(appData.users);
+            
+            for (let i = days - 1; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                
+                labels.push(date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' }));
+                
+                // User's data
+                const userDayMinutes = (currentUser.studyHistory || [])
+                    .filter(session => session.date === dateStr)
+                    .reduce((sum, session) => sum + session.minutes, 0);
+                data.push(userDayMinutes);
+                
+                // Average data
+                const allDayMinutes = allUsers.map(user => 
+                    (user.studyHistory || [])
+                        .filter(session => session.date === dateStr)
+                        .reduce((sum, session) => sum + session.minutes, 0)
+                );
+                const avgMinutes = allDayMinutes.length > 0 ? 
+                    allDayMinutes.reduce((sum, minutes) => sum + minutes, 0) / allDayMinutes.length : 0;
+                avgData.push(Math.round(avgMinutes));
+            }
+            
+            studyChart.data.labels = labels;
+            studyChart.data.datasets[0].data = data;
+            studyChart.data.datasets[1].data = avgData;
+            studyChart.update();
+        }
+
+        // Posts functionality
+        function createPost() {
+            const content = document.getElementById('postContent').value.trim();
+            const subject = document.getElementById('postSubject').value;
+            const fileInput = document.getElementById('postFile');
+            
+            if (!content) {
+                alert('投稿内容を入力してください');
+                return;
+            }
+            
+            const post = {
+                id: Date.now(),
+                author: currentUser.name,
+                authorId: currentUser.id,
+                content: content,
+                subject: subject,
+                timestamp: Date.now(),
+                file: null
+            };
+            
+            if (fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    post.file = {
+                        name: fileInput.files[0].name,
+                        type: fileInput.files[0].type,
+                        data: e.target.result
+                    };
                     
-                    data.labels.push(date.toLocaleDateString());
+                    appData.posts.unshift(post);
+                    saveData();
+                    loadPosts();
                     
-                    const dayTotal = studyTime[dateStr] ? 
-                        Object.values(studyTime[dateStr]).reduce((sum, time) => sum + time, 0) : 0;
-                    data.values.push(dayTotal);
-                }
-            } else if (period === 'month') {
-                for (let i = 29; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    const dateStr = date.toDateString();
+                    document.getElementById('postContent').value = '';
+                    fileInput.value = '';
                     
-                    if (i % 3 === 0) { // 3日おきにラベル表示
-                        data.labels.push(date.toLocaleDateString());
-                    } else {
-                        data.labels.push('');
+                    checkAchievements();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                appData.posts.unshift(post);
+                saveData();
+                loadPosts();
+                
+                document.getElementById('postContent').value = '';
+                checkAchievements();
+            }
+        }
+
+        function loadPosts() {
+            const postsList = document.getElementById('postsList');
+            postsList.innerHTML = '';
+            
+            appData.posts.forEach(post => {
+                const postDiv = document.createElement('div');
+                postDiv.className = 'bg-white rounded-lg shadow p-4';
+                
+                let fileHtml = '';
+                if (post.file) {
+                    if (post.file.type.startsWith('image/')) {
+                        fileHtml = `<img src="${post.file.data}" class="max-w-full h-48 object-cover rounded mt-2">`;
+                    } else if (post.file.type === 'application/pdf') {
+                        fileHtml = `<div class="mt-2 p-2 bg-gray-100 rounded flex items-center">
+                            <i class="fas fa-file-pdf text-red-500 mr-2"></i>
+                            <span>${post.file.name}</span>
+                            <a href="${post.file.data}" target="_blank" class="ml-auto text-blue-600 hover:text-blue-800">開く</a>
+                        </div>`;
                     }
+                }
+                
+                postDiv.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                <i class="fas fa-user text-gray-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-sm">${post.author}</div>
+                                <div class="text-xs text-gray-500">${new Date(post.timestamp).toLocaleString('ja-JP')}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">${getSubjectName(post.subject)}</span>
+                            ${post.authorId === currentUser.id ? 
+                                `<button onclick="deletePost(${post.id})" class="text-red-500 hover:text-red-700">
+                                    <i class="fas fa-trash text-xs"></i>
+                                </button>` : ''}
+                        </div>
+                    </div>
+                    <div class="text-gray-800 mb-2">${post.content}</div>
+                    ${fileHtml}
+                `;
+                
+                postsList.appendChild(postDiv);
+            });
+        }
+
+        function deletePost(postId) {
+            if (confirm('この投稿を削除しますか？')) {
+                appData.posts = appData.posts.filter(post => post.id !== postId);
+                saveData();
+                loadPosts();
+            }
+        }
+
+        function getSubjectName(subject) {
+            const subjects = {
+                'general': '一般',
+                'math': '数学',
+                'english': '英語',
+                'science': '理科',
+                'social': '社会',
+                'japanese': '国語'
+            };
+            return subjects[subject] || subject;
+        }
+
+        // Chat functionality
+        function loadChats() {
+            updateChatList();
+        }
+
+        function updateChatList() {
+            const chatList = document.getElementById('chatList');
+            chatList.innerHTML = '';
+            
+            // Add groups
+            Object.entries(appData.groups).forEach(([groupId, group]) => {
+                if (group.members.includes(currentUser.id)) {
+                    const chatDiv = document.createElement('div');
+                    chatDiv.className = 'p-2 bg-gray-100 rounded cursor-pointer hover:bg-gray-200';
+                    chatDiv.textContent = group.name;
+                    chatDiv.onclick = () => openChat('group_' + groupId);
+                    chatList.appendChild(chatDiv);
+                }
+            });
+        }
+
+        function updatePrivateChatOptions() {
+            const select = document.getElementById('privateChatSelect');
+            select.innerHTML = '<option value="">相手を選択</option>';
+            
+            Object.values(appData.users).forEach(user => {
+                if (user.id !== currentUser.id) {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.name;
+                    select.appendChild(option);
+                }
+            });
+        }
+
+        function openPrivateChat() {
+            const select = document.getElementById('privateChatSelect');
+            const targetUserId = select.value;
+            
+            if (targetUserId) {
+                const chatId = [currentUser.id, targetUserId].sort().join('_');
+                openChat('private_' + chatId);
+            }
+        }
+
+        function openChat(chatId) {
+            currentChat = chatId;
+            
+            if (!appData.chats[chatId]) {
+                appData.chats[chatId] = { messages: [] };
+            }
+            
+            // Update header
+            const header = document.getElementById('chatHeader');
+            let chatName = '';
+            
+            if (chatId.startsWith('group_')) {
+                const groupId = chatId.replace('group_', '');
+                chatName = appData.groups[groupId]?.name || 'グループチャット';
+            } else if (chatId.startsWith('private_')) {
+                const userIds = chatId.replace('private_', '').split('_');
+                const otherUserId = userIds.find(id => id !== currentUser.id);
+                const otherUser = appData.users[otherUserId];
+                chatName = otherUser ? `${otherUser.name} との個人チャット` : '個人チャット';
+            }
+            
+            header.innerHTML = `<h4 class="font-semibold">${chatName}</h4>`;
+            
+            // Show input and load messages
+            document.getElementById('chatInput').classList.remove('hidden');
+            loadChatMessages();
+        }
+
+        function loadChatMessages() {
+            const messagesDiv = document.getElementById('chatMessages');
+            messagesDiv.innerHTML = '';
+            
+            if (!currentChat || !appData.chats[currentChat]) return;
+            
+            appData.chats[currentChat].messages.forEach(message => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `mb-3 ${message.senderId === currentUser.id ? 'text-right' : 'text-left'}`;
+                
+                messageDiv.innerHTML = `
+                    <div class="inline-block max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
+                        message.senderId === currentUser.id 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-200 text-gray-800'
+                    }">
+                        <div class="text-xs opacity-75 mb-1">${message.senderName}</div>
+                        <div>${message.content}</div>
+                        <div class="text-xs opacity-75 mt-1">
+                            ${new Date(message.timestamp).toLocaleTimeString('ja-JP')}
+                        </div>
+                        ${message.senderId === currentUser.id || (currentUser.isAdmin && currentUser.adminPassword) ? 
+                            `<button onclick="deleteMessage('${currentChat}', ${message.timestamp})" class="text-xs opacity-75 hover:opacity-100 ml-2">
+                                削除
+                            </button>` : ''}
+                    </div>
+                `;
+                
+                messagesDiv.appendChild(messageDiv);
+            });
+            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            
+            if (!content || !currentChat) return;
+            
+            const message = {
+                senderId: currentUser.id,
+                senderName: currentUser.name,
+                content: content,
+                timestamp: Date.now()
+            };
+            
+            if (!appData.chats[currentChat]) {
+                appData.chats[currentChat] = { messages: [] };
+            }
+            
+            appData.chats[currentChat].messages.push(message);
+            saveData();
+            loadChatMessages();
+            
+            input.value = '';
+            checkAchievements();
+        }
+
+        function deleteMessage(chatId, timestamp) {
+            if (confirm('このメッセージを削除しますか？')) {
+                appData.chats[chatId].messages = appData.chats[chatId].messages.filter(
+                    msg => msg.timestamp !== timestamp
+                );
+                saveData();
+                loadChatMessages();
+            }
+        }
+
+        // Group management
+        function showGroupCreate() {
+            const modal = document.getElementById('groupCreateModal');
+            const memberSelect = document.getElementById('groupMemberSelect');
+            
+            memberSelect.innerHTML = '';
+            Object.values(appData.users).forEach(user => {
+                if (user.id !== currentUser.id) {
+                    const label = document.createElement('label');
+                    label.className = 'flex items-center space-x-2';
+                    label.innerHTML = `
+                        <input type="checkbox" value="${user.id}">
+                        <span>${user.name}</span>
+                    `;
+                    memberSelect.appendChild(label);
+                }
+            });
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeGroupCreate() {
+            document.getElementById('groupCreateModal').classList.add('hidden');
+            document.getElementById('groupName').value = '';
+        }
+
+        function createGroup() {
+            const groupName = document.getElementById('groupName').value.trim();
+            const selectedMembers = Array.from(document.querySelectorAll('#groupMemberSelect input:checked'))
+                .map(cb => cb.value);
+            
+            if (!groupName) {
+                alert('グループ名を入力してください');
+                return;
+            }
+            
+            if (selectedMembers.length === 0) {
+                alert('メンバーを選択してください');
+                return;
+            }
+            
+            const groupId = Date.now().toString();
+            appData.groups[groupId] = {
+                name: groupName,
+                members: [currentUser.id, ...selectedMembers],
+                creator: currentUser.id,
+                created: Date.now()
+            };
+            
+            saveData();
+            closeGroupCreate();
+            updateChatList();
+            checkAchievements();
+        }
+
+        // Word Cards functionality
+        function loadCardSets() {
+            const cardSetsList = document.getElementById('cardSetsList');
+            cardSetsList.innerHTML = '';
+            
+            Object.entries(appData.cardSets).forEach(([setId, cardSet]) => {
+                if (cardSet.creatorId === currentUser.id || cardSet.isPublic) {
+                    const setDiv = document.createElement('div');
+                    setDiv.className = 'bg-white rounded-lg shadow p-4';
                     
-                    const dayTotal = studyTime[dateStr] ? 
-                        Object.values(studyTime[dateStr]).reduce((sum, time) => sum + time, 0) : 0;
-                    data.values.push(dayTotal);
+                    setDiv.innerHTML = `
+                        <h4 class="font-semibold mb-2">${cardSet.name}</h4>
+                        <p class="text-sm text-gray-600 mb-3">${cardSet.cards.length}枚のカード</p>
+                        <div class="flex justify-between items-center">
+                            <button onclick="studyCardSet('${setId}')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                                学習開始
+                            </button>
+                            ${cardSet.creatorId === currentUser.id ? `
+                                <button onclick="deleteCardSet('${setId}')" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                                    削除
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                    
+                    cardSetsList.appendChild(setDiv);
+                }
+            });
+        }
+
+        function showCreateCardSet() {
+            document.getElementById('createCardSetModal').classList.remove('hidden');
+            document.getElementById('cardInputs').innerHTML = `
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" class="px-2 py-1 border border-gray-300 rounded text-sm" placeholder="単語・問題">
+                    <input type="text" class="px-2 py-1 border border-gray-300 rounded text-sm" placeholder="意味・答え">
+                </div>
+            `;
+        }
+
+        function closeCreateCardSet() {
+            document.getElementById('createCardSetModal').classList.add('hidden');
+            document.getElementById('cardSetName').value = '';
+            document.getElementById('cardSetPublic').checked = false;
+        }
+
+        function addCardInput() {
+            const cardInputs = document.getElementById('cardInputs');
+            const newCard = document.createElement('div');
+            newCard.className = 'grid grid-cols-2 gap-2';
+            newCard.innerHTML = `
+                <input type="text" class="px-2 py-1 border border-gray-300 rounded text-sm" placeholder="単語・問題">
+                <input type="text" class="px-2 py-1 border border-gray-300 rounded text-sm" placeholder="意味・答え">
+            `;
+            cardInputs.appendChild(newCard);
+        }
+
+        function createCardSet() {
+            const setName = document.getElementById('cardSetName').value.trim();
+            const isPublic = document.getElementById('cardSetPublic').checked;
+            
+            if (!setName) {
+                alert('セット名を入力してください');
+                return;
+            }
+            
+            const cardInputs = document.querySelectorAll('#cardInputs > div');
+            const cards = [];
+            
+            cardInputs.forEach(cardDiv => {
+                const inputs = cardDiv.querySelectorAll('input');
+                const front = inputs[0].value.trim();
+                const back = inputs[1].value.trim();
+                
+                if (front && back) {
+                    cards.push({ front, back });
+                }
+            });
+            
+            if (cards.length === 0) {
+                alert('カードを少なくとも1枚作成してください');
+                return;
+            }
+            
+            const setId = Date.now().toString();
+            appData.cardSets[setId] = {
+                name: setName,
+                cards: cards,
+                creatorId: currentUser.id,
+                isPublic: isPublic,
+                created: Date.now()
+            };
+            
+            saveData();
+            closeCreateCardSet();
+            loadCardSets();
+        }
+
+        function deleteCardSet(setId) {
+            if (confirm('この単語カードセットを削除しますか？')) {
+                delete appData.cardSets[setId];
+                saveData();
+                loadCardSets();
+            }
+        }
+
+        function studyCardSet(setId) {
+            currentCardSet = appData.cardSets[setId];
+            currentCardIndex = 0;
+            
+            document.getElementById('cardSetsList').classList.add('hidden');
+            document.getElementById('cardStudyArea').classList.remove('hidden');
+            
+            updateCardDisplay();
+        }
+
+        function exitCardStudy() {
+            currentCardSet = null;
+            currentCardIndex = 0;
+            
+            document.getElementById('cardSetsList').classList.remove('hidden');
+            document.getElementById('cardStudyArea').classList.add('hidden');
+        }
+
+        function updateCardDisplay() {
+            if (!currentCardSet || !currentCardSet.cards[currentCardIndex]) return;
+            
+            const card = currentCardSet.cards[currentCardIndex];
+            
+            document.getElementById('currentCardSetName').textContent = currentCardSet.name;
+            document.getElementById('cardProgress').textContent = 
+                `${currentCardIndex + 1} / ${currentCardSet.cards.length}`;
+            document.getElementById('cardFront').textContent = card.front;
+            document.getElementById('cardBack').textContent = card.back;
+            
+            // Reset card to front
+            document.querySelector('.word-card').classList.remove('flipped');
+        }
+
+        function flipCard() {
+            document.querySelector('.word-card').classList.toggle('flipped');
+        }
+
+        function previousCard() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                updateCardDisplay();
+            }
+        }
+
+        function nextCard() {
+            if (currentCardIndex < currentCardSet.cards.length - 1) {
+                currentCardIndex++;
+                updateCardDisplay();
+            }
+        }
+
+        // Achievements system
+        function checkAchievements() {
+            if (!currentUser) return;
+            
+            const achievements = currentUser.achievements || [];
+            let newAchievements = [];
+            
+            // Check each achievement condition
+            Object.entries(appData.achievements).forEach(([achievementId, achievement]) => {
+                if (!achievements.includes(achievementId)) {
+                    if (checkAchievementCondition(achievement.condition)) {
+                        achievements.push(achievementId);
+                        newAchievements.push(achievement.name);
+                        
+                        // Apply achievement effects
+                        if (achievement.effect === 'exp_point_multiplier_1.5') {
+                            currentUser.expMultiplier *= 1.5;
+                            currentUser.pointMultiplier *= 1.5;
+                        }
+                    }
+                }
+            });
+            
+            currentUser.achievements = achievements;
+            saveData();
+            
+            if (newAchievements.length > 0) {
+                alert(`アチーブメント獲得！\n${newAchievements.join('\n')}`);
+                updateAchievementsDisplay();
+            }
+        }
+
+        function checkAchievementCondition(condition) {
+            if (!currentUser) return false;
+            
+            const studyHistory = currentUser.studyHistory || [];
+            const totalStudyTime = currentUser.totalStudyTime || 0;
+            const posts = appData.posts.filter(post => post.authorId === currentUser.id);
+            
+            switch (condition) {
+                case 'login_first':
+                    return true; // Awarded on registration
+                
+                case 'login_consecutive_3':
+                case 'login_consecutive_7':
+                case 'login_consecutive_30':
+                    const days = parseInt(condition.split('_')[2]);
+                    return checkConsecutiveLogins(days);
+                
+                case 'timer_complete_30':
+                    return studyHistory.some(session => session.minutes >= 30);
+                
+                case 'timer_use_3':
+                    return studyHistory.length >= 3;
+                
+                case 'pomodoro_complete_10':
+                case 'pomodoro_complete_100':
+                    const count = parseInt(condition.split('_')[2]);
+                    return studyHistory.filter(session => session.minutes === 25).length >= count;
+                
+                case 'study_morning_5':
+                    return studyHistory.filter(session => {
+                        const hour = new Date(session.timestamp).getHours();
+                        return hour < 6;
+                    }).length >= 5;
+                
+                case 'study_night_10':
+                    return studyHistory.filter(session => {
+                        const hour = new Date(session.timestamp).getHours();
+                        return hour >= 22;
+                    }).length >= 10;
+                
+                case 'study_total_600':
+                    return totalStudyTime >= 600; // 10 hours
+                
+                case 'study_total_6000':
+                    return totalStudyTime >= 6000; // 100 hours
+                
+                case 'study_daily_300_3':
+                    const dailyTotals = {};
+                    studyHistory.forEach(session => {
+                        if (!dailyTotals[session.date]) dailyTotals[session.date] = 0;
+                        dailyTotals[session.date] += session.minutes;
+                    });
+                    return Object.values(dailyTotals).filter(total => total >= 300).length >= 3;
+                
+                case 'post_create_5':
+                    return posts.length >= 5;
+                
+                case 'chat_first':
+                    return Object.values(appData.chats).some(chat => 
+                        chat.messages && chat.messages.some(msg => msg.senderId === currentUser.id)
+                    );
+                
+                case 'group_join_first':
+                    return Object.values(appData.groups).some(group => 
+                        group.members.includes(currentUser.id)
+                    );
+                
+                case 'group_create_3plus':
+                    return Object.values(appData.groups).some(group => 
+                        group.creator === currentUser.id && group.members.length >= 3
+                    );
+                
+                case 'study_week_1200':
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    const recentSessions = studyHistory.filter(session => 
+                        new Date(session.timestamp) >= weekAgo
+                    );
+                    return recentSessions.reduce((sum, session) => sum + session.minutes, 0) >= 1200;
+                
+                case 'achievement_count_10':
+                    return (currentUser.achievements || []).length >= 10;
+                
+                case 'study_19days_4hours_3weeks':
+                    // Secret achievement: 19 days of 4+ hours study within 3 weeks
+                    const threeWeeksAgo = new Date();
+                    threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);
+                    
+                    const recentDays = {};
+                    studyHistory.forEach(session => {
+                        if (new Date(session.timestamp) >= threeWeeksAgo) {
+                            if (!recentDays[session.date]) recentDays[session.date] = 0;
+                            recentDays[session.date] += session.minutes;
+                        }
+                    });
+                    
+                    return Object.values(recentDays).filter(total => total >= 240).length >= 19;
+                
+                default:
+                    return false;
+            }
+        }
+
+        function checkConsecutiveLogins(requiredDays) {
+            // For demo purposes, we'll simulate this check
+            // In a real app, you'd track login dates
+            return Math.random() > 0.7; // Random chance for demo
+        }
+
+        function updateAchievementsDisplay() {
+            const achievementsList = document.getElementById('achievementsList');
+            achievementsList.innerHTML = '';
+            
+            const userAchievements = currentUser.achievements || [];
+            
+            Object.entries(appData.achievements).forEach(([achievementId, achievement]) => {
+                if (!achievement.hidden || userAchievements.includes(achievementId)) {
+                    const achievementDiv = document.createElement('div');
+                    achievementDiv.className = `achievement-badge ${
+                        userAchievements.includes(achievementId) ? 'bg-yellow-100 border-2 border-yellow-400' : 'bg-gray-100 border-2 border-gray-300'
+                    }`;
+                    achievementDiv.title = achievement.description;
+                    
+                    achievementDiv.innerHTML = `
+                        <div class="text-center">
+                            <div class="text-2xl">${achievement.image}</div>
+                            <div class="text-xs mt-1 font-bold ${
+                                userAchievements.includes(achievementId) ? 'text-yellow-800' : 'text-gray-500'
+                            }">${achievement.name}</div>
+                        </div>
+                    `;
+                    
+                    achievementsList.appendChild(achievementDiv);
+                }
+            });
+        }
+
+        // Settings functionality
+        function changeBackground(color) {
+            document.body.style.background = color;
+            appData.settings.background = color;
+            saveData();
+        }
+
+        document.getElementById('backgroundImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.body.style.backgroundImage = `url(${e.target.result})`;
+                    document.body.style.backgroundSize = 'cover';
+                    document.body.style.backgroundPosition = 'center';
+                    appData.settings.backgroundImage = e.target.result;
+                    saveData();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function buyExpBoost() {
+            const price = parseInt(document.getElementById('expBoostPrice').textContent);
+            
+            if (currentUser.points >= price) {
+                currentUser.points -= price;
+                currentUser.expMultiplier *= 1.1;
+                
+                // Increase price for next purchase
+                const newPrice = Math.floor(price * 1.3);
+                document.getElementById('expBoostPrice').textContent = newPrice;
+                
+                updateUserDisplay();
+                saveData();
+                alert('経験値ブーストを購入しました！');
+            } else {
+                alert('ポイントが足りません');
+            }
+        }
+
+        function buyDoubleBoost() {
+            const price = parseInt(document.getElementById('doubleBoostPrice').textContent);
+            
+            if (currentUser.points >= price) {
+                currentUser.points -= price;
+                currentUser.expMultiplier *= 1.2;
+                currentUser.pointMultiplier *= 1.2;
+                
+                // Increase price for next purchase
+                const newPrice = Math.floor(price * 1.3);
+                document.getElementById('doubleBoostPrice').textContent = newPrice;
+                
+                updateUserDisplay();
+                saveData();
+                alert('ダブルブーストを購入しました！');
+            } else {
+                alert('ポイントが足りません');
+            }
+        }
+
+        // Admin functionality
+        function showAdminLogin() {
+            document.getElementById('adminLoginModal').classList.remove('hidden');
+        }
+
+        function closeAdminLogin() {
+            document.getElementById('adminLoginModal').classList.add('hidden');
+            document.getElementById('adminLoginError').classList.add('hidden');
+        }
+
+        function adminLogin() {
+            const userId = document.getElementById('adminUserId').value;
+            const password = document.getElementById('adminPassword').value;
+            const error = document.getElementById('adminLoginError');
+            
+            error.classList.add('hidden');
+            
+            const user = appData.users[userId];
+            if (user && user.isAdmin && user.adminPassword === password) {
+                closeAdminLogin();
+                showAdminPanel();
+            } else {
+                error.textContent = 'ユーザーIDまたはパスワードが正しくありません';
+                error.classList.remove('hidden');
+            }
+        }
+
+        function showAdminPanel() {
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            updateAdminUserList();
+        }
+
+        function exitAdmin() {
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+        }
+
+        function updateAdminUserList() {
+            const userList = document.getElementById('adminUserList');
+            userList.innerHTML = '';
+            
+            Object.values(appData.users).forEach(user => {
+                const userDiv = document.createElement('div');
+                userDiv.className = 'flex justify-between items-center p-2 bg-gray-100 rounded';
+                
+                userDiv.innerHTML = `
+                    <div>
+                        <div class="font-semibold">${user.name}</div>
+                        <div class="text-sm text-gray-600">Lv.${user.level} - ${user.totalStudyTime || 0}分</div>
+                    </div>
+                    <button onclick="banUser('${user.id}')" class="px-2 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
+                        BAN
+                    </button>
+                `;
+                
+                userList.appendChild(userDiv);
+            });
+        }
+
+        function banUser(userId) {
+            if (confirm(`ユーザー ${appData.users[userId].name} をアクセス禁止にしますか？`)) {
+                delete appData.users[userId];
+                saveData();
+                updateAdminUserList();
+                alert('ユーザーをアクセス禁止にしました');
+            }
+        }
+
+        function toggleGlobalChat() {
+            appData.settings.globalChatEnabled = !appData.settings.globalChatEnabled;
+            const button = document.getElementById('globalChatToggle');
+            
+            if (appData.settings.globalChatEnabled) {
+                button.textContent = '開放中';
+                button.className = 'px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700';
+            } else {
+                button.textContent = '閉鎖中';
+                button.className = 'px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700';
+            }
+            
+            saveData();
+        }
+
+        // Super Admin functionality
+        function showSuperAdminLogin() {
+            document.getElementById('superAdminLoginModal').classList.remove('hidden');
+        }
+
+        function closeSuperAdminLogin() {
+            document.getElementById('superAdminLoginModal').classList.add('hidden');
+            document.getElementById('superAdminLoginError').classList.add('hidden');
+        }
+
+        function superAdminLogin() {
+            const name = document.getElementById('superAdminName').value;
+            const id = document.getElementById('superAdminId').value;
+            const error = document.getElementById('superAdminLoginError');
+            
+            error.classList.add('hidden');
+            
+            if (name === '早川' && id === '1h1y2k7w4a') {
+                closeSuperAdminLogin();
+                showSuperAdminPanel();
+            } else {
+                error.textContent = 'アクセス権限がありません';
+                error.classList.remove('hidden');
+            }
+        }
+
+        function showSuperAdminPanel() {
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('superAdminPanel').classList.remove('hidden');
+            updateSuperAdminInterface();
+        }
+
+        function exitSuperAdmin() {
+            document.getElementById('superAdminPanel').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+        }
+
+        function updateSuperAdminInterface() {
+            // Update admin user select
+            const adminSelect = document.getElementById('adminUserSelect');
+            adminSelect.innerHTML = '<option value="">ユーザーを選択</option>';
+            
+            Object.values(appData.users).forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.name;
+                adminSelect.appendChild(option);
+            });
+        }
+
+        function setUserAsAdmin() {
+            const userId = document.getElementById('adminUserSelect').value;
+            const password = document.getElementById('setAdminPassword').value;
+            
+            if (!userId || !password) {
+                alert('ユーザーとパスワードを選択してください');
+                return;
+            }
+            
+            const user = appData.users[userId];
+            if (user) {
+                user.isAdmin = true;
+                user.adminPassword = password;
+                saveData();
+                alert(`${user.name} に管理者権限を付与しました`);
+            }
+        }
+
+        // Data synchronization (simulated real-time)
+        function syncData() {
+            // In a real app, this would sync with a server
+            // For demo purposes, we'll just update the display
+            updateUserDisplay();
+            
+            // Simulate receiving new messages or posts
+            if (Math.random() > 0.99) {
+                loadPosts();
+                if (currentChat) {
+                    loadChatMessages();
                 }
             }
-            
-            return data;
         }
 
-        // 通知・リマインダー機能
-        function setupReminder() {
-            if (reminderInterval) clearInterval(reminderInterval);
-            
-            if (document.getElementById('reminderNotification')?.checked) {
-                reminderInterval = setInterval(() => {
-                    if (!document.getElementById('quietMode')?.checked) {
-                        showNotification('30分が経過しました。休憩しませんか？', 'info');
-                    }
-                }, 30 * 60 * 1000); // 30分
-            }
-        }
-
-        // ユーティリティ関数
-        function showNotification(message, type = 'success') {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.className = `notification ${type === 'error' ? 'bg-red-500' : type === 'info' ? 'bg-blue-500' : 'bg-green-500'} show`;
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-
-        function showModal(content) {
-            document.getElementById('modalContent').innerHTML = content;
-            document.getElementById('modalOverlay').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('modalOverlay').classList.add('hidden');
-        }
-
-        function saveUsers() {
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const userIndex = users.findIndex(u => u.id === currentUser.id);
-            if (userIndex !== -1) {
-                users[userIndex] = currentUser;
-                localStorage.setItem('users', JSON.stringify(users));
-            }
-        }
-
-        // イベントリスナー
+        // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
-            init();
+            loadData();
             
-            // エンターキーでメッセージ送信
-            document.getElementById('chatInput')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
+            // Set up event listeners for Enter key
+            document.getElementById('messageInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
                     sendMessage();
                 }
             });
             
-            // モーダルの外側クリックで閉じる
-            document.getElementById('modalOverlay')?.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeModal();
+            document.getElementById('accessPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkAccess();
                 }
             });
-            
-            // 設定の変更を監視
-            document.getElementById('reminderNotification')?.addEventListener('change', setupReminder);
         });
     </script>
 </body>
